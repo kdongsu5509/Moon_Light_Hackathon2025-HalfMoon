@@ -1,6 +1,9 @@
-﻿# Moon_Light_Hackathon2025-HalfMoon
+﻿# Contribute
+### 해당 레포지토리의 `Main` 브랜치에 바로 push는 불가능합니다!
+- 항상 `pull request`를 생성해 주세요!
 
 # 개발 동기
 # 개발한 서비스에 대한 설명
 # 개발 환경 및 방법
 # 기능 명세서
+
