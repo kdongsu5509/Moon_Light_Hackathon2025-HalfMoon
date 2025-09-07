@@ -1,0 +1,49 @@
+# 프로젝트 전체
+.DS_Store
+.env
+.idea
+.vscode
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store
+
+---
+
+# Backend (Java Spring)
+/Backend/.gradle
+/Backend/build/
+/Backend/gradle-wrapper.jar
+/Backend/src/main/resources/application-local.properties
+/Backend/src/main/resources/static/
+!/Backend/src/main/resources/static/.gitkeep
+/Backend/src/main/resources/templates/
+!/Backend/src/main/resources/templates/.gitkeep
+
+# Gradle
+.gradle
+/build/
+!/gradle-wrapper.jar
+
+# IntelliJ-specific files
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# STS (Spring Tool Suite)
+.metadata
+.classpath
+.project
+
+# macOS
+
+# Frontend (Node.js/Vite)
+/Frontend/node_modules/
+/Frontend/dist/
+/Frontend/build/
+
+# Vite
+.vite/
