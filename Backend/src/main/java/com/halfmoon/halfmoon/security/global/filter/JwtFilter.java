@@ -22,7 +22,7 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String token = resolveToken(request);
+        String token = extractPureToken(request);
         log.info("JWT 토큰 추출: {}", token);
 
         if (token != null) {
@@ -43,8 +43,7 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // 헤더에서 'Bearer ' 부분을 제거하고 순수 토큰만 반환하는 메서드. 토큰이 없으면 null 반환
-    private String resolveToken(HttpServletRequest request) {
+    private String extractPureToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);

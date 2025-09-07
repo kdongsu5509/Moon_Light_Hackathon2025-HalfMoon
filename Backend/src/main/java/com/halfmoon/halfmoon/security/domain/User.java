@@ -1,8 +1,11 @@
 package com.halfmoon.halfmoon.security.domain;
 
+import static jakarta.persistence.CascadeType.ALL;
+import static jakarta.persistence.FetchType.LAZY;
 import static lombok.AccessLevel.PROTECTED;
 
 import com.halfmoon.halfmoon.global.domain.BaseEntity;
+import com.halfmoon.halfmoon.user.domain.Record;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,6 +13,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.util.UUID;
@@ -29,6 +33,7 @@ public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "user_id")
     UUID id;
 
     @Column(unique = true, nullable = false)
@@ -51,6 +56,9 @@ public class User extends BaseEntity {
     private KoreanLevel koreanLevel;
 
     private boolean enabled;
+
+    @OneToOne(mappedBy = "user", cascade = ALL, fetch = LAZY)
+    private Record record;
 
 //    @OneToMany(mappedBy = "user")
 //    private List<Pin> myPins = new ArrayList<>();

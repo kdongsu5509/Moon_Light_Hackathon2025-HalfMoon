@@ -6,7 +6,6 @@ import com.halfmoon.halfmoon.global.util.JsonUtils;
 import com.halfmoon.halfmoon.security.application.JwtService;
 import com.halfmoon.halfmoon.security.domain.JwtResult;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -50,7 +49,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     // SUCCESS -> 로그인 정상 작동 후 JWT 발급 로직
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-                                            Authentication authResult) throws IOException, ServletException {
+                                            Authentication authResult) throws IOException {
         UserDetails user = (UserDetails) authResult.getPrincipal();
         JwtResult.Issue resDto = jwtService.issueJwtAuth(user.getUsername(),
                 user.getAuthorities().iterator().next().getAuthority());
@@ -64,7 +63,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     // 실패 시 -> 로그인 실패 RESPONSE를 반환.
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-                                              AuthenticationException failed) throws IOException, ServletException {
+                                              AuthenticationException failed) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json;charset=UTF-8");
 

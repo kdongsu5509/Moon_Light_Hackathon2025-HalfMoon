@@ -1,7 +1,8 @@
 package com.halfmoon.halfmoon.security.infra;
 
+import static com.halfmoon.halfmoon.global.exception.CustomExcpMsgs.USER_NOT_FOUND;
+
 import com.halfmoon.halfmoon.global.exception.CustomExceptions.UserException;
-import com.halfmoon.halfmoon.global.exception.CustomExcpMsgs.USER_NOT_FOUND;
 import com.halfmoon.halfmoon.security.domain.User;
 import com.halfmoon.halfmoon.security.domain.UserRepository;
 import java.util.Collection;
@@ -54,19 +55,7 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public Optional<User> findByUserName(String userName) {
-        return UserJpaRepository.findByUserName(userName);
-    }
-
-    @Override
     public boolean existsByEmail(String email) {
         return UserJpaRepository.existsByEmail(email);
     }
-
-    @Override
-    public boolean existsByUserName(String userName) {
-        return UserJpaRepository.existsByUserName(userName);
-    }
-
-
 }

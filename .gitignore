@@ -16,11 +16,11 @@ pnpm-debug.log*
 /Backend/.gradle
 /Backend/build/
 /Backend/gradle-wrapper.jar
-/Backend/src/main/resources/application-local.properties
 /Backend/src/main/resources/static/
 !/Backend/src/main/resources/static/.gitkeep
 /Backend/src/main/resources/templates/
 !/Backend/src/main/resources/templates/.gitkeep
+/Backend/src/main/resources/application-secret.yaml
 
 # Gradle
 .gradle

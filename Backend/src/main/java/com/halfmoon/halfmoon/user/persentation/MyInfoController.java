@@ -2,9 +2,11 @@ package com.halfmoon.halfmoon.user.persentation;
 
 import com.halfmoon.halfmoon.global.response.APIResponse;
 import com.halfmoon.halfmoon.security.domain.CustomUserDetails;
-import com.halfmoon.halfmoon.user.application.MyService;
-import com.halfmoon.halfmoon.user.dto.UserInfoResponseDto;
+import com.halfmoon.halfmoon.user.application.MyInfoService;
+import com.halfmoon.halfmoon.user.persentation.dto.response.UserNickNameDto;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -19,22 +21,26 @@ import org.springframework.web.bind.annotation.RestController;
         description = "내 정보 관련 API"
 )
 @Slf4j
-@RequestMapping("/api/my")
+@RequestMapping("/api/my/info")
 @RestController
 @RequiredArgsConstructor
-public class MyController {
+public class MyInfoController {
 
-    final MyService service;
+    final MyInfoService service;
 
     @Operation(
-            summary = "내 정보 조회",
-            description = "인증된 사용자의 이메일을 기반으로 해당 사용자의 정보를 조회합니다. 사용자 정보는 UserInfoResponseDto 형태로 반환됩니다."
+            summary = "내 닉네임 조회",
+            description = "인증된 사용자의 이메일을 기반으로 해당 사용자의 닉네임 정보를 조회합니다."
     )
     @ApiResponses(
             value = {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
-                            description = "내 정보 조회 성공"
+                            description = "내 정보 조회 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = UserNickNameDto.class)
+                            )
 
                     ),
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -43,9 +49,9 @@ public class MyController {
                     )
             }
     )
-    @GetMapping
-    public APIResponse<UserInfoResponseDto> myInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        UserInfoResponseDto myInfo = service.getMyInfo(userDetails.getUsername());
+    @GetMapping("/nickname")
+    public APIResponse<UserNickNameDto> myInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        UserNickNameDto myInfo = service.getMyNickname(userDetails.getUsername());
         return APIResponse.success(myInfo);
     }
 }

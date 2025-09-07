@@ -2,6 +2,7 @@ package com.halfmoon.halfmoon.security.application;
 
 import com.halfmoon.halfmoon.security.domain.User;
 import com.halfmoon.halfmoon.security.domain.UserRepository;
+import com.halfmoon.halfmoon.security.presentation.dto.EmailRespDto;
 import com.halfmoon.halfmoon.security.presentation.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,5 +38,10 @@ public class UserService {
 
     private String encodePassword(String password) {
         return passwordEncoder.encode(password);
+    }
+
+    public EmailRespDto isEmailUnique(String email) {
+        boolean isExist = userRepository.existsByEmail(email.trim());
+        return new EmailRespDto(!isExist);
     }
 }

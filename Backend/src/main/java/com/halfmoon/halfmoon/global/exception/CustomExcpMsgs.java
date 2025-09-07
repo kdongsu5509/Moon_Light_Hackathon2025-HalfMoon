@@ -19,6 +19,7 @@ public enum CustomExcpMsgs {
     BOOKMARK_NOT_FOUND("해당 북마크 정보를 찾을 수 없습니다."),
     BOOKMARK_UNAUTHORIZED("해당 북마크에 대한 권한이 없습니다.");
 
+
     private final String message;
 
     CustomExcpMsgs(String message) {

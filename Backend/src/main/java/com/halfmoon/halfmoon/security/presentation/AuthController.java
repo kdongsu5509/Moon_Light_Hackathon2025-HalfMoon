@@ -1,7 +1,7 @@
 package com.halfmoon.halfmoon.security.presentation;
 
-import com.dt.find_restaurant.security.application.JwtService;
-import com.dt.find_restaurant.security.domain.JwtResult;
+import com.halfmoon.halfmoon.security.application.JwtService;
+import com.halfmoon.halfmoon.security.domain.JwtResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
