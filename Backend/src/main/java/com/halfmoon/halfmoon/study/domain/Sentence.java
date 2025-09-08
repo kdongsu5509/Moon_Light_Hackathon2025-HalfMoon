@@ -26,4 +26,13 @@ public class Sentence {
 
     @ManyToOne(fetch = LAZY)
     private UserToStudyContent studyContent; // 연관된 StudyContent
+
+    public static Sentence create(String sentence, String meaning, Long newWordsCount, UserToStudyContent save) {
+        Sentence s = new Sentence();
+        s.sentence = sentence;
+        s.meaning = meaning;
+        s.newWordsCount = newWordsCount;
+        s.studyContent = save;
+        return s;
+    }
 }

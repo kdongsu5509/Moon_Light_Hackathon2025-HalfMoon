@@ -2,7 +2,6 @@ package com.halfmoon.halfmoon.study.application;
 
 import com.halfmoon.halfmoon.security.domain.User;
 import com.halfmoon.halfmoon.security.domain.UserRepository;
-import com.halfmoon.halfmoon.study.aiResponse.AIStudySentence;
 import com.halfmoon.halfmoon.study.aiResponse.AISubjectStudyContentsResponse;
 import com.halfmoon.halfmoon.study.domain.Sentence;
 import com.halfmoon.halfmoon.study.domain.UserToStudyContent;
@@ -46,24 +45,36 @@ public class SubjectStudyService {
                 req.subject(), req.studyLevel());
         //3. 기록이 있으면, 해당 내용 리턴
         if (userToStudyContent.isPresent()) {
-            UserToStudyContent contents = userToStudyContent.get();
-            Collection<Sentence> studySentences = sentenceJpaRepository.findByStudyContentId(contents.getId());
-            if (studySentences.isEmpty()) {
-                throw new RuntimeException("해당 학습 내용에 대한 문장이 존재하지 않습니다.");
+            return getSubjectStudyContentResponsedtoFromDB(userToStudyContent);
+
+        } else { // 4. 기록이 없으면, OpenAI API 호출을 통해 내용 생성 -> DB 저장 -> 리턴 // TODO!!
+            generateSubjectStudyContentsWithOpenAi(req, user);
+            Optional<UserToStudyContent> newUserToStudyContent = userToStudyContentJpaRepository.findBySubjectAndStudyLevel(
+                    req.subject(), req.studyLevel());
+            if (newUserToStudyContent.isPresent()) {
+                return getSubjectStudyContentResponsedtoFromDB(newUserToStudyContent);
+            } else {
+                throw new RuntimeException("학습 내용 생성에 실패했습니다. 다시 시도해주세요.");
             }
-
-            List<SubjectStudySentence> list = studySentences.stream().map(
-                    this::toSubjectStudySentence
-            ).toList();
-            return new SubjectStudyContentsResponseDto(list);
-
-        } else { // 4. 기록이 없으면, OpenAI API 호출을 통해 내용 생성 후 리턴
-            return generateSubjectStudyContentsWithOpenAi(req, user);
         }
     }
 
-    private SubjectStudyContentsResponseDto generateSubjectStudyContentsWithOpenAi(SubjectStudyContenstRequestDto req,
-                                                                                   User user) {
+    private SubjectStudyContentsResponseDto getSubjectStudyContentResponsedtoFromDB(
+            Optional<UserToStudyContent> userToStudyContent) {
+        UserToStudyContent contents = userToStudyContent.get();
+        Collection<Sentence> studySentences = sentenceJpaRepository.findByStudyContentId(contents.getId());
+        if (studySentences.isEmpty()) {
+            throw new RuntimeException("해당 학습 내용에 대한 문장이 존재하지 않습니다.");
+        }
+
+        List<SubjectStudySentence> list = studySentences.stream().map(
+                this::toSubjectStudySentence
+        ).toList();
+        return new SubjectStudyContentsResponseDto(contents.getId(), list);
+    }
+
+    private void generateSubjectStudyContentsWithOpenAi(SubjectStudyContenstRequestDto req,
+                                                        User user) {
         Map<String, Object> params = setPromptingParamsWithUserInfoAndSubjectAndLevel(req, user);
         AISubjectStudyContentsResponse entity = ChatClient.create(chatModel).prompt()
                 .user(u -> u.text(
@@ -72,8 +83,16 @@ public class SubjectStudyService {
                 .call()
                 .entity(AISubjectStudyContentsResponse.class);
 
+        // DB에 저장
+        UserToStudyContent userToStudyContent = UserToStudyContent.of(req.subject(), req.studyLevel());
+        UserToStudyContent save = userToStudyContentJpaRepository.save(userToStudyContent);
+
         assert entity != null;
-        return toSubjectStudyContentsResponseDto(entity);
+        List<Sentence> list = entity.contents().stream()
+                .map(sentence -> Sentence.create(sentence.sentence(), sentence.meaning(), sentence.newWordCount(),
+                        save))
+                .toList();
+        sentenceJpaRepository.saveAll(list);
     }
 
     private static Map<String, Object> setPromptingParamsWithUserInfoAndSubjectAndLevel(
@@ -87,26 +106,11 @@ public class SubjectStudyService {
         return params;
     }
 
-
-    private SubjectStudyContentsResponseDto toSubjectStudyContentsResponseDto(
-            AISubjectStudyContentsResponse aiResponse) {
-        List<SubjectStudySentence> sentences = aiResponse.contents().stream()
-                .map(this::toSubjectStudySentence)
-                .toList();
-        return new SubjectStudyContentsResponseDto(sentences);
-    }
-
     private SubjectStudySentence toSubjectStudySentence(Sentence sentence) {
         return new SubjectStudySentence(
+                sentence.getId(),
                 sentence.getSentence(),
                 sentence.getMeaning()
-        );
-    }
-
-    private SubjectStudySentence toSubjectStudySentence(AIStudySentence sentence) {
-        return new SubjectStudySentence(
-                sentence.sentence(),
-                sentence.meaning()
         );
     }
 }
