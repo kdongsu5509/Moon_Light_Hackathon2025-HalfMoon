@@ -30,7 +30,7 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
-      <motion.div 
+      <motion.div
         className="w-full max-w-md mx-auto"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -131,25 +131,11 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
                   onClick={() => setIsLogin(!isLogin)}
                   className="text-blue-600 hover:text-blue-700"
                 >
-                  {isLogin 
-                    ? '처음이신가요? 회원가입하기' 
+                  {isLogin
+                    ? '처음이신가요? 회원가입하기'
                     : '이미 계정이 있으신가요? 로그인하기'
                   }
                 </Button>
-              </div>
-
-              {/* Demo Mode */}
-              <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <div className="text-center">
-                  <p className="text-sm text-yellow-800 mb-2">체험해보기</p>
-                  <Button
-                    variant="outline"
-                    onClick={onLogin}
-                    className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
-                  >
-                    데모 모드로 시작하기 🎮
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>

@@ -61,7 +61,7 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
   });
 
   const [currentStep, setCurrentStep] = useState(0);
-  const totalSteps = 3;
+  const totalSteps = 2;
 
   const isStepValid = (step: number) => {
     switch (step) {
@@ -69,8 +69,6 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
         return profile.name.trim() && profile.nickname.trim() && profile.age;
       case 1:
         return profile.nativeLanguage && profile.koreanLevel;
-      case 2:
-        return profile.avatar;
       default:
         return false;
     }
@@ -187,11 +185,10 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
                   {nativeLanguages.map((lang) => (
                     <Card
                       key={lang.code}
-                      className={`cursor-pointer transition-all ${
-                        profile.nativeLanguage === lang.code
-                          ? 'ring-2 ring-blue-400 bg-blue-50'
-                          : 'hover:bg-gray-50'
-                      }`}
+                      className={`cursor-pointer transition-all ${profile.nativeLanguage === lang.code
+                        ? 'ring-2 ring-blue-400 bg-blue-50'
+                        : 'hover:bg-gray-50'
+                        }`}
                       onClick={() => setProfile({ ...profile, nativeLanguage: lang.code })}
                     >
                       <CardContent className="p-3 text-center">
@@ -209,11 +206,10 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
                   {koreanLevels.map((level) => (
                     <Card
                       key={level.value}
-                      className={`cursor-pointer transition-all ${
-                        profile.koreanLevel === level.value
-                          ? 'ring-2 ring-blue-400 bg-blue-50'
-                          : 'hover:bg-gray-50'
-                      }`}
+                      className={`cursor-pointer transition-all ${profile.koreanLevel === level.value
+                        ? 'ring-2 ring-blue-400 bg-blue-50'
+                        : 'hover:bg-gray-50'
+                        }`}
                       onClick={() => setProfile({ ...profile, koreanLevel: level.value })}
                     >
                       <CardContent className="p-3">
@@ -227,67 +223,67 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
           </motion.div>
         );
 
-      case 2:
-        return (
-          <motion.div
-            className="space-y-6"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-          >
-            <div className="text-center space-y-2">
-              <div className="text-4xl">🎨</div>
-              <h3 className="text-xl text-gray-800">아바타 선택</h3>
-              <p className="text-gray-600">좋아하는 캐릭터를 골라주세요</p>
-            </div>
+      // case 2:
+      //   return (
+      //     <motion.div
+      //       className="space-y-6"
+      //       initial={{ opacity: 0, x: 20 }}
+      //       animate={{ opacity: 1, x: 0 }}
+      //       exit={{ opacity: 0, x: -20 }}
+      //     >
+      //       <div className="text-center space-y-2">
+      //         <div className="text-4xl">🎨</div>
+      //         <h3 className="text-xl text-gray-800">아바타 선택</h3>
+      //         <p className="text-gray-600">좋아하는 캐릭터를 골라주세요</p>
+      //       </div>
 
-            <div className="grid grid-cols-4 gap-4">
-              {avatarOptions.map((avatar) => (
-                <motion.div
-                  key={avatar.id}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                >
-                  <Card
-                    className={`cursor-pointer transition-all aspect-square border-2 ${
-                      profile.avatar === avatar.id
-                        ? 'ring-4 ring-blue-400 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 shadow-lg'
-                        : `hover:shadow-md ${avatar.color} border-gray-200 hover:border-gray-300`
-                    }`}
-                    onClick={() => setProfile({ ...profile, avatar: avatar.id })}
-                  >
-                    <CardContent className="p-4 flex flex-col items-center justify-center h-full relative">
-                      <motion.div 
-                        className="text-4xl mb-2"
-                        animate={profile.avatar === avatar.id ? { 
-                          scale: [1, 1.2, 1],
-                          rotate: [0, 10, -10, 0]
-                        } : {}}
-                        transition={{ duration: 0.6 }}
-                      >
-                        {avatar.emoji}
-                      </motion.div>
-                      <div className="text-xs text-center font-medium text-gray-700">
-                        {avatar.name}
-                      </div>
-                      {profile.avatar === avatar.id && (
-                        <motion.div
-                          className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ delay: 0.1 }}
-                        >
-                          <span className="text-white text-xs">✓</span>
-                        </motion.div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        );
+      //       <div className="grid grid-cols-4 gap-4">
+      //         {avatarOptions.map((avatar) => (
+      //           <motion.div
+      //             key={avatar.id}
+      //             whileHover={{ scale: 1.05, y: -2 }}
+      //             whileTap={{ scale: 0.95 }}
+      //             transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      //           >
+      //             <Card
+      //               className={`cursor-pointer transition-all aspect-square border-2 ${
+      //                 profile.avatar === avatar.id
+      //                   ? 'ring-4 ring-blue-400 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 shadow-lg'
+      //                   : `hover:shadow-md ${avatar.color} border-gray-200 hover:border-gray-300`
+      //               }`}
+      //               onClick={() => setProfile({ ...profile, avatar: avatar.id })}
+      //             >
+      //               <CardContent className="p-4 flex flex-col items-center justify-center h-full relative">
+      //                 <motion.div 
+      //                   className="text-4xl mb-2"
+      //                   animate={profile.avatar === avatar.id ? { 
+      //                     scale: [1, 1.2, 1],
+      //                     rotate: [0, 10, -10, 0]
+      //                   } : {}}
+      //                   transition={{ duration: 0.6 }}
+      //                 >
+      //                   {avatar.emoji}
+      //                 </motion.div>
+      //                 <div className="text-xs text-center font-medium text-gray-700">
+      //                   {avatar.name}
+      //                 </div>
+      //                 {profile.avatar === avatar.id && (
+      //                   <motion.div
+      //                     className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+      //                     initial={{ scale: 0 }}
+      //                     animate={{ scale: 1 }}
+      //                     transition={{ delay: 0.1 }}
+      //                   >
+      //                     <span className="text-white text-xs">✓</span>
+      //                   </motion.div>
+      //                 )}
+      //               </CardContent>
+      //             </Card>
+      //           </motion.div>
+      //         ))}
+      //       </div>
+      //     </motion.div>
+      //   );
 
       default:
         return null;
@@ -296,7 +292,7 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 flex items-center justify-center p-4">
-      <motion.div 
+      <motion.div
         className="w-full max-w-md mx-auto"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
