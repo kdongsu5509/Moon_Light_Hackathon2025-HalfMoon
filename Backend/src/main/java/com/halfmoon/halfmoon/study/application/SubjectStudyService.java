@@ -5,16 +5,23 @@ import com.halfmoon.halfmoon.security.domain.UserRepository;
 import com.halfmoon.halfmoon.study.aiResponse.AISubjectStudyContentsResponse;
 import com.halfmoon.halfmoon.study.domain.Sentence;
 import com.halfmoon.halfmoon.study.domain.UserToStudyContent;
+import com.halfmoon.halfmoon.study.dto.req.StudyLevel;
+import com.halfmoon.halfmoon.study.dto.req.Subject;
 import com.halfmoon.halfmoon.study.dto.req.SubjectStudyContenstRequestDto;
+import com.halfmoon.halfmoon.study.dto.resp.CompletionRateResponse;
+import com.halfmoon.halfmoon.study.dto.resp.SubjectCompletionRateDto;
 import com.halfmoon.halfmoon.study.dto.resp.SubjectStudyContentsResponseDto;
 import com.halfmoon.halfmoon.study.dto.resp.SubjectStudySentence;
 import com.halfmoon.halfmoon.study.infra.SentenceJpaRepository;
 import com.halfmoon.halfmoon.study.infra.UserToStudyContentJpaRepository;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -59,6 +66,17 @@ public class SubjectStudyService {
         }
     }
 
+    public void completeStudySentence(String username, UUID sentenceId) {
+        //1. Sentence 조회
+        Sentence sentence = sentenceJpaRepository.findById(sentenceId).orElseThrow(
+                () -> new IllegalArgumentException("해당 문장을 찾을 수 없습니다: " + sentenceId
+                )
+        );
+
+        //2. 해당 문장의 isDone 상태를 true로 변경
+        sentence.markAsDone();
+    }
+
     private SubjectStudyContentsResponseDto getSubjectStudyContentResponsedtoFromDB(
             Optional<UserToStudyContent> userToStudyContent) {
         UserToStudyContent contents = userToStudyContent.get();
@@ -84,7 +102,7 @@ public class SubjectStudyService {
                 .entity(AISubjectStudyContentsResponse.class);
 
         // DB에 저장
-        UserToStudyContent userToStudyContent = UserToStudyContent.of(req.subject(), req.studyLevel());
+        UserToStudyContent userToStudyContent = UserToStudyContent.of(user, req.subject(), req.studyLevel());
         UserToStudyContent save = userToStudyContentJpaRepository.save(userToStudyContent);
 
         assert entity != null;
@@ -110,7 +128,46 @@ public class SubjectStudyService {
         return new SubjectStudySentence(
                 sentence.getId(),
                 sentence.getSentence(),
-                sentence.getMeaning()
+                sentence.getMeaning(),
+                sentence.isDone()
         );
+    }
+
+    public CompletionRateResponse getMyCompletionRate(String userEmail, StudyLevel studyLevel) {
+
+        // 1. 모든 주제(Enum)를 가져와 리스트로 만듭니다.
+        // Subject.values()를 사용하면 Enum에 새로운 주제가 추가되더라도 코드를 수정할 필요가 없습니다.
+        List<Subject> allSubjects = Arrays.asList(Subject.values());
+
+        // 2. 사용자가 학습 중인 모든 StudyContent를 한 번에 조회합니다.
+        List<UserToStudyContent> myStudyContents = userToStudyContentJpaRepository.findByUserEmailAndStudyLevel(
+                userEmail, studyLevel);
+
+        // 3. 모든 주제를 순회하며 완료율을 계산합니다.
+        List<SubjectCompletionRateDto> completionRateDtoList = allSubjects.stream()
+                .map(subject -> {
+                    // 해당 주제에 대한 모든 문장을 조회합니다.
+                    List<Sentence> sentences = sentenceJpaRepository.findByStudyContentSubjectAndStudyContentStudyLevel(
+                            subject, studyLevel);
+
+                    // 사용자가 해당 주제를 학습했는지 확인
+                    boolean userHasStudiedSubject = myStudyContents.stream()
+                            .anyMatch(content -> content.getSubject().equals(subject));
+
+                    long completedCount = 0;
+                    if (userHasStudiedSubject) {
+                        // 학습한 주제일 경우에만 완료된 문장 수를 카운트합니다.
+                        completedCount = sentences.stream()
+                                .filter(Sentence::isDone)
+                                .count();
+                    }
+
+                    double rate = (sentences.size() > 0) ? (double) completedCount / sentences.size() * 100 : 0;
+
+                    return new SubjectCompletionRateDto(subject, rate);
+                })
+                .collect(Collectors.toList());
+
+        return new CompletionRateResponse(completionRateDtoList);
     }
 }

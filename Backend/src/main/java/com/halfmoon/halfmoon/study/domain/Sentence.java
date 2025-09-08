@@ -23,6 +23,7 @@ public class Sentence {
     private String sentence; // 문장
     private String meaning; // 문장의 뜻
     private Long newWordsCount; // 새롭게 배운 단어 수
+    private boolean isDone; //해당 단어 학습 완료 여부
 
     @ManyToOne(fetch = LAZY)
     private UserToStudyContent studyContent; // 연관된 StudyContent
@@ -33,6 +34,11 @@ public class Sentence {
         s.meaning = meaning;
         s.newWordsCount = newWordsCount;
         s.studyContent = save;
+        s.isDone = false;
         return s;
+    }
+
+    public void markAsDone() {
+        this.isDone = true;
     }
 }

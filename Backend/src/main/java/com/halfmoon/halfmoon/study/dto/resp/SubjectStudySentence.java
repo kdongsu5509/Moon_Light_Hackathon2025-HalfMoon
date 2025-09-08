@@ -5,6 +5,7 @@ import java.util.UUID;
 public record SubjectStudySentence(
         UUID id,
         String sentence,
-        String meaning
+        String meaning,
+        boolean isDone
 ) {
 }
