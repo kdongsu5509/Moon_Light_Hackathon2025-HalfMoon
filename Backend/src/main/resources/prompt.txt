@@ -1,0 +1,31 @@
+{
+  "contents": [
+    {
+      "parts": [
+        {
+          "text": "이 오디오 클립은 한국어 발음 연습을 위해 발화하고 그것을 녹음한 것입니다. 이 오디오 클립 속 한국어 파일을 한국인들과 유사한지 10점 만점을 기준으로 평가하여 점수를 반환해주세요."
+        },
+        {
+          "file_data": {
+            "mime_type": "%s",
+            "file_uri": "%s"
+          }
+        }
+      ]
+    }
+  ],
+  "generationConfig": {
+    "responseMimeType": "application/json",
+    "responseSchema": {
+      "type": "object",
+      "properties": {
+        "score": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "score"
+      ]
+    }
+  }
+}
