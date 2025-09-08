@@ -5,7 +5,7 @@ import static jakarta.persistence.FetchType.LAZY;
 import static lombok.AccessLevel.PROTECTED;
 
 import com.halfmoon.halfmoon.global.domain.BaseEntity;
-import com.halfmoon.halfmoon.user.domain.Record;
+import com.halfmoon.halfmoon.user.domain.StudyRecord;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -58,7 +58,7 @@ public class User extends BaseEntity {
     private boolean enabled;
 
     @OneToOne(mappedBy = "user", cascade = ALL, fetch = LAZY)
-    private Record record;
+    private StudyRecord studyRecord;
 
 //    @OneToMany(mappedBy = "user")
 //    private List<Pin> myPins = new ArrayList<>();

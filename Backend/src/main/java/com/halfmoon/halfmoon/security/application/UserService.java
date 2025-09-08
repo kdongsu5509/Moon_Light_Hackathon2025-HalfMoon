@@ -4,6 +4,8 @@ import com.halfmoon.halfmoon.security.domain.User;
 import com.halfmoon.halfmoon.security.domain.UserRepository;
 import com.halfmoon.halfmoon.security.presentation.dto.EmailRespDto;
 import com.halfmoon.halfmoon.security.presentation.dto.UserDto;
+import com.halfmoon.halfmoon.user.domain.StudyRecord;
+import com.halfmoon.halfmoon.user.infra.StudyRecordJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,9 +20,16 @@ public class UserService {
 
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final StudyRecordJpaRepository studyRecordJpaRepository;
 
     public void signUp(UserDto req) {
-        userRepository.save(toUser(req));
+        //사용자 생성
+        User user = toUser(req);
+        userRepository.save(user);
+
+        //학습 기록 생성
+        StudyRecord studyRecord = StudyRecord.of(user);
+        studyRecordJpaRepository.save(studyRecord);
     }
 
     private User toUser(UserDto req) {

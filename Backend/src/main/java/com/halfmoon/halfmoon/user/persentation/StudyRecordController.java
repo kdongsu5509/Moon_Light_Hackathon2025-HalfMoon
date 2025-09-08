@@ -2,8 +2,10 @@ package com.halfmoon.halfmoon.user.persentation;
 
 import com.halfmoon.halfmoon.global.response.APIResponse;
 import com.halfmoon.halfmoon.security.domain.CustomUserDetails;
-import com.halfmoon.halfmoon.user.application.RecordServcie;
-import com.halfmoon.halfmoon.user.persentation.dto.response.RecordResponseDto;
+import com.halfmoon.halfmoon.user.application.StudyRecordServcie;
+import com.halfmoon.halfmoon.user.persentation.dto.response.StudyRecordResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,13 +19,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/my/record")
 @RequiredArgsConstructor
-public class RecordController {
+public class StudyRecordController {
 
-    private final RecordServcie recordService;
+    private final StudyRecordServcie recordService;
 
+    @Operation(summary = "나의 학습 기록 조회", description = "로그인한 사용자의 학습 기록을 조회합니다.")
     @GetMapping
-    public APIResponse<RecordResponseDto> getMyRecord(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        RecordResponseDto myRecord = recordService.getMyRecord(userDetails.getUsername());
+    public APIResponse<StudyRecordResponseDto> getMyRecord(
+            @Parameter(description = "사용자 정보 (인증 객체)", hidden = true)
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        StudyRecordResponseDto myRecord = recordService.getMyStudyRecord(userDetails.getUsername());
         return APIResponse.success(myRecord);
     }
 }

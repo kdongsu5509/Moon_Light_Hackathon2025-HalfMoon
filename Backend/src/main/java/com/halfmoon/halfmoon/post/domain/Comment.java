@@ -32,6 +32,15 @@ public class Comment extends BaseEntity {
     @ManyToOne(fetch = LAZY)
     private User user;
 
+    public static Comment of(String content, Post post, User user) {
+        Comment comment = new Comment();
+        comment.content = content;
+        comment.post = post;
+        comment.user = user;
+        comment.likeCount = 0L;
+        return comment;
+    }
+
     public void decrementLikeCount() {
         this.likeCount--;
     }

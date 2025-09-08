@@ -77,7 +77,6 @@ public class JwtService {
 
         //1. DB IO 필요없는 만료 시간부터 확인.
         validateAccessTokenWithExpriedTime(accessToken);
-
         log.info("checking accessToken: {}", accessToken);
         //2. DB에 존재하는가?
         JwtEntity jwtEntity = jwtRepository.findJwtByAccessToken(accessToken).orElseThrow(

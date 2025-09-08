@@ -32,24 +32,58 @@ public class PostService {
     private final CommentLikeJpaRepository commentLikeRepository;
     private final CommentLikeJpaRepository commentLikeJpaRepository;
 
+
+    public UUID createPost(String userEmail, PostRequestDto request) {
+        User user = userRepository.findByEmail(userEmail).orElseThrow(
+                () -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userEmail)
+        );
+
+        Post post = Post.create(request.title(), request.content(), user);
+        Post save = postRepository.save(post);
+
+        return save.getId();
+    }
+
     public List<PostResponseDto> getAllPosts(String userEmail) {
         List<PostLike> myPostLikes = postLikeRepository.findByUserEmail(userEmail);
         List<Post> allPosts = postRepository.findAll();
-        return toDto(allPosts, myPostLikes);
+        return toMultiplePostResponseDtos(allPosts, myPostLikes);
     }
 
-    private List<PostResponseDto> toDto(List<Post> posts, List<PostLike> myPostLikes) {
+    public void likePost(String username, UUID postId) {
+        Post post = postRepository.findById(postId).orElseThrow(
+                () -> new IllegalArgumentException("게시글을 찾을 수 없습니다: " + postId)
+        );
+        User user = userRepository.findByEmail(username).orElseThrow(
+                () -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username)
+        );
 
+        boolean alreadyLiked = postLikeRepository.findByUserEmailAndPostId(username, postId).isPresent();
+
+        if (alreadyLiked) {
+            //취소하기
+            PostLike existingLike = postLikeRepository.findByUserEmailAndPostId(username, postId).get();
+            postLikeRepository.delete(existingLike);
+            post.decrementLikeCount();
+            return;
+        }
+
+        PostLike postLike = PostLike.create(user, post);
+        postLikeRepository.save(postLike);
+        post.incrementLikeCount();
+    }
+
+    private List<PostResponseDto> toMultiplePostResponseDtos(List<Post> posts, List<PostLike> myPostLikes) {
         return posts.stream()
                 .map(post -> {
                     boolean likedByMe = myPostLikes.stream()
                             .anyMatch(like -> like.getPost().getId().equals(post.getId()));
-                    return toDto(post, likedByMe);
+                    return toSinglePostResponseDto(post, likedByMe);
                 })
                 .toList();
     }
 
-    private PostResponseDto toDto(Post post, boolean likedByMe) {
+    private PostResponseDto toSinglePostResponseDto(Post post, boolean likedByMe) {
         return new PostResponseDto(
                 post.getId(),
                 post.getTitle(),
@@ -61,17 +95,6 @@ public class PostService {
                 post.getCommentCount(),
                 likedByMe
         );
-    }
-
-    public UUID createPost(String userEmail, PostRequestDto request) {
-        User user = userRepository.findByEmail(userEmail).orElseThrow(
-                () -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userEmail)
-        );
-
-        Post post = Post.create(request.title(), request.content(), user);
-        Post save = postRepository.save(post);
-
-        return save.getId();
     }
 
     public PostWithCommentResponseDto getPostWithComment(String userEmail, UUID postId) {
@@ -121,26 +144,15 @@ public class PostService {
                 .toList();
     }
 
-    public void likePost(String username, UUID postId) {
+    public void deletePost(String username, UUID postId) {
         Post post = postRepository.findById(postId).orElseThrow(
                 () -> new IllegalArgumentException("게시글을 찾을 수 없습니다: " + postId)
         );
-        User user = userRepository.findByEmail(username).orElseThrow(
-                () -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username)
-        );
 
-        boolean alreadyLiked = postLikeRepository.findByUserEmailAndPostId(username, postId).isPresent();
-
-        if (alreadyLiked) {
-            //취소하기
-            PostLike existingLike = postLikeRepository.findByUserEmailAndPostId(username, postId).get();
-            postLikeRepository.delete(existingLike);
-            post.decrementLikeCount();
-            return;
+        if (!post.getUser().getEmail().equals(username)) {
+            throw new IllegalArgumentException("게시글 삭제 권한이 없습니다.");
         }
 
-        PostLike postLike = PostLike.create(user, post);
-        postLikeRepository.save(postLike);
-        post.incrementLikeCount();
+        postRepository.delete(post);
     }
 }

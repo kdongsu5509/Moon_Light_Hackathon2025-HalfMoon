@@ -13,10 +13,13 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * StudyRecord는 사용자의 총 학습 기록을 나타내는 엔티티입니다.
+ */
 @Getter
 @Entity
 @NoArgsConstructor(access = PROTECTED)
-public class Record {
+public class StudyRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -28,4 +31,13 @@ public class Record {
     @OneToOne
     @JoinColumn(name = "user_id") // 외래 키 컬럼을 명시
     private User user;
+
+    public static StudyRecord of(User user) {
+        StudyRecord studyRecord = new StudyRecord();
+        studyRecord.wordCnt = 0L;
+        studyRecord.talkCnt = 0L;
+        studyRecord.continueDay = 0L;
+        studyRecord.user = user;
+        return studyRecord;
+    }
 }
