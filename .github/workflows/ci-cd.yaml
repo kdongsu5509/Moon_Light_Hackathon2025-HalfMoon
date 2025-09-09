@@ -8,7 +8,7 @@ on:
     paths:
       - 'Backend/**' 
 env:
-  AWS_REGION: ap-southeast-2
+  AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: hackathon/halfmoon
   CONTAINER_NAME: spring-app
   PROJECT_PATH: ./Backend
