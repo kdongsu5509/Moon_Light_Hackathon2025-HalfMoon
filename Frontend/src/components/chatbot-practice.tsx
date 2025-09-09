@@ -6,6 +6,19 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { ArrowLeft, Send, Mic, MicOff, Bot, User } from 'lucide-react';
 
+// API 함수 직접 내부에 구현 (src/api/chat.ts 별도 생성 권장)
+// 삭제 API 호출 함수
+async function deleteConversation(conversationId: string, token: string) {
+  const response = await fetch(`/api/chat/delete/${conversationId}`, {
+    method: 'POST', // 백엔드 @PostMapping에 맞게 POST
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  return await response.json();
+}
+
 interface ChatbotPracticeProps {
   onBack: () => void;
   onPointsEarned: (points: number) => void;
@@ -20,105 +33,114 @@ interface Message {
 }
 
 const scenarios = [
+  // 기존 scenarios 배열 그대로 유지
   {
     id: 'greeting',
     name: '인사하기',
     description: '처음 만나는 사람과 인사 나누기',
     icon: '👋',
-    color: 'bg-blue-100 text-blue-800'
+    color: 'bg-blue-100 text-blue-800',
   },
   {
     id: 'shopping',
     name: '쇼핑하기',
     description: '가게에서 물건 사고 대화하기',
     icon: '🛒',
-    color: 'bg-green-100 text-green-800'
+    color: 'bg-green-100 text-green-800',
   },
   {
     id: 'restaurant',
     name: '음식점에서',
     description: '음식점에서 주문하고 대화하기',
     icon: '🍽️',
-    color: 'bg-orange-100 text-orange-800'
+    color: 'bg-orange-100 text-orange-800',
   },
   {
     id: 'school',
     name: '학교에서',
     description: '선생님, 친구들과 대화하기',
     icon: '🏫',
-    color: 'bg-purple-100 text-purple-800'
+    color: 'bg-purple-100 text-purple-800',
   },
   {
     id: 'family',
     name: '가족과 대화',
     description: '가족들과 일상 대화하기',
     icon: '👨‍👩‍👧‍👦',
-    color: 'bg-pink-100 text-pink-800'
-  }
+    color: 'bg-pink-100 text-pink-800',
+  },
 ];
 
 const botResponses = {
+  // 기존 botResponses 그대로 유지
   greeting: {
-    initial: "안녕하세요! 저는 AI 한국어 선생님이에요. 처음 만나서 반가워요! 자기소개를 해주세요.",
+    initial:
+      '안녕하세요! 저는 AI 한국어 선생님이에요. 처음 만나서 반가워요! 자기소개를 해주세요.',
     responses: {
-      "안녕": "안녕하세요! 정말 반가워요. 이름이 뭐예요?",
-      "안녕하세요": "네, 안녕하세요! 만나서 정말 기뻐요. 어디서 오셨어요?",
-      "반가워요": "저도 정말 반가워요! 한국어 공부한 지 얼마나 됐어요?",
-      "이름": "좋은 이름이네요! 저는 반월이라고 불러주세요. 취미가 뭐예요?",
-      "처음": "처음 뵙겠습니다! 잘 부탁드려요. 오늘 기분이 어때요?",
-      default: "좋아요! 그런데 조금 더 자세히 말해주실 수 있나요? 예를 들어 '안녕하세요, 저는 ○○입니다'라고 말해보세요."
-    }
+      안녕: '안녕하세요! 정말 반가워요. 이름이 뭐예요?',
+      안녕하세요: '네, 안녕하세요! 만나서 정말 기뻐요. 어디서 오셨어요?',
+      반가워요: '저도 정말 반가워요! 한국어 공부한 지 얼마나 됐어요?',
+      이름: '좋은 이름이네요! 저는 반월이라고 불러주세요. 취미가 뭐예요?',
+      처음: '처음 뵙겠습니다! 잘 부탁드려요. 오늘 기분이 어때요?',
+      default:
+        "좋아요! 그런데 조금 더 자세히 말해주실 수 있나요? 예를 들어 '안녕하세요, 저는 ○○입니다'라고 말해보세요.",
+    },
   },
   shopping: {
-    initial: "안녕하세요! 편의점에 오신 것을 환영합니다. 무엇을 찾고 계세요?",
+    initial: '안녕하세요! 편의점에 오신 것을 환영합니다. 무엇을 찾고 계세요?',
     responses: {
-      "물": "물이 필요하시군요! 냉장고에 있어요. 어떤 물을 원하세요?",
-      "우유": "우유는 냉장고 안쪽에 있어요. 얼마나 필요하세요?",
-      "과자": "과자는 3번 선반에 있어요. 어떤 과자를 좋아하세요?",
-      "얼마": "이거는 1,500원이에요. 계산해드릴까요?",
-      "계산": "네, 계산해드릴게요. 현금으로 내시나요, 카드로 내시나요?",
-      default: "죄송해요, 잘 못 들었어요. 다시 말씀해주세요. '○○이 어디 있어요?' 이렇게 물어보세요."
-    }
+      물: '물이 필요하시군요! 냉장고에 있어요. 어떤 물을 원하세요?',
+      우유: '우유는 냉장고 안쪽에 있어요. 얼마나 필요하세요?',
+      과자: '과자는 3번 선반에 있어요. 어떤 과자를 좋아하세요?',
+      얼마: '이거는 1,500원이에요. 계산해드릴까요?',
+      계산: '네, 계산해드릴게요. 현금으로 내시나요, 카드로 내시나요?',
+      default:
+        "죄송해요, 잘 못 들었어요. 다시 말씀해주세요. '○○이 어디 있어요?' 이렇게 물어보세요.",
+    },
   },
   restaurant: {
-    initial: "어서오세요! 한식당에 오신 것을 환영합니다. 몇 분이세요?",
+    initial: '어서오세요! 한식당에 오신 것을 환영합니다. 몇 분이세요?',
     responses: {
-      "한명": "한 분이시군요! 이쪽 자리로 안내해드릴게요. 메뉴 보시겠어요?",
-      "두명": "두 분이시군요! 창가 자리 어떠세요? 메뉴판 가져다드릴게요.",
-      "메뉴": "네, 여기 메뉴판이에요. 오늘 추천은 김치찌개와 불고기예요!",
-      "김치찌개": "김치찌개 정말 맛있어요! 밥이랑 반찬도 나와요. 주문하시겠어요?",
-      "불고기": "불고기도 인기가 많아요! 야채도 함께 나와요. 음료수는 뭘로 드릴까요?",
-      "주문": "네, 주문 받겠습니다! 김치찌개 하나요? 음료수는 어떻게 하시겠어요?",
-      default: "죄송해요, 다시 한 번 말씀해주세요. '○○ 주세요' 또는 '○○ 있어요?' 이렇게 말해보세요."
-    }
+      한명: '한 분이시군요! 이쪽 자리로 안내해드릴게요. 메뉴 보시겠어요?',
+      두명: '두 분이시군요! 창가 자리 어떠세요? 메뉴판 가져다드릴게요.',
+      메뉴: '네, 여기 메뉴판이에요. 오늘 추천은 김치찌개와 불고기예요!',
+      김치찌개: '김치찌개 정말 맛있어요! 밥이랑 반찬도 나와요. 주문하시겠어요?',
+      불고기: '불고기도 인기가 많아요! 야채도 함께 나와요. 음료수는 뭘로 드릴까요?',
+      주문: '네, 주문 받겠습니다! 김치찌개 하나요? 음료수는 어떻게 하시겠어요?',
+      default:
+        "죄송해요, 다시 한 번 말씀해주세요. '○○ 주세요' 또는 '○○ 있어요?' 이렇게 말해보세요.",
+    },
   },
   school: {
-    initial: "안녕! 새로 온 친구구나? 나는 지수야. 너는 이름이 뭐야?",
+    initial: '안녕! 새로 온 친구구나? 나는 지수야. 너는 이름이 뭐야?',
     responses: {
-      "안녕": "안녕! 반가워! 몇 학년이야?",
-      "이름": "좋은 이름이네! 어느 나라에서 왔어?",
-      "학년": "우리 같은 학년이네! 좋아하는 과목이 뭐야?",
-      "나라": "와, 정말 멀리서 왔구나! 한국 어때?",
-      "과목": "나도 그 과목 좋아해! 같이 공부할까?",
-      "한국": "한국 생활이 어때? 어려운 것 있으면 언제든 물어봐!",
-      default: "응? 잘 못 들었어. 다시 말해줄래? 친구들끼리는 편하게 말해도 돼!"
-    }
+      안녕: '안녕! 반가워! 몇 학년이야?',
+      이름: '좋은 이름이네! 어느 나라에서 왔어?',
+      학년: '우리 같은 학년이네! 좋아하는 과목이 뭐야?',
+      나라: '와, 정말 멀리서 왔구나! 한국 어때?',
+      과목: '나도 그 과목 좋아해! 같이 공부할까?',
+      한국: '한국 생활이 어때? 어려운 것 있으면 언제든 물어봐!',
+      default: '응? 잘 못 들었어. 다시 말해줄래? 친구들끼리는 편하게 말해도 돼!',
+    },
   },
   family: {
-    initial: "얘야, 학교 다녀왔니? 오늘 학교에서 뭐 했어?",
+    initial: '얘야, 학교 다녀왔니? 오늘 학교에서 뭐 했어?',
     responses: {
-      "네": "그래, 잘했어. 오늘 뭐 배웠는지 엄마한테 말해줄래?",
-      "한국어": "한국어 공부했구나! 어려웠어? 엄마가 도와줄까?",
-      "친구": "친구들이랑 뭐 했어? 재밌게 놀았니?",
-      "숙제": "숙제 있어? 있으면 먼저 하고 저녁 먹자.",
-      "배고파": "배고프구나! 뭐 먹고 싶어? 엄마가 만들어줄게.",
-      "피곤해": "많이 피곤하구나. 조금 쉬다가 저녁 먹자.",
-      default: "응? 엄마가 잘 못 들었나? 천천히 다시 말해봐."
-    }
-  }
+      네: '그래, 잘했어. 오늘 뭐 배웠는지 엄마한테 말해줄래?',
+      한국어: '한국어 공부했구나! 어려웠어? 엄마가 도와줄까?',
+      친구: '친구들이랑 뭐 했어? 재밌게 놀았니?',
+      숙제: '숙제 있어? 있으면 먼저 하고 저녁 먹자.',
+      배고파: '배고프구나! 뭐 먹고 싶어? 엄마가 만들어줄게.',
+      피곤해: '많이 피곤하구나. 조금 쉬다가 저녁 먹자.',
+      default: '응? 엄마가 잘 못 들었나? 천천히 다시 말해봐.',
+    },
+  },
 };
 
-export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps) {
+export function ChatbotPractice({
+  onBack,
+  onPointsEarned,
+}: ChatbotPracticeProps) {
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -138,7 +160,7 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
       content: botResponses[scenarioId as keyof typeof botResponses].initial,
       isBot: true,
       timestamp: new Date(),
-      scenario: scenarioId
+      scenario: scenarioId,
     };
     setMessages([initialMessage]);
   };
@@ -151,11 +173,11 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
       id: Date.now().toString(),
       content: inputMessage,
       isBot: false,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setMessageCount(prev => prev + 1);
+    setMessages((prev) => [...prev, userMessage]);
+    setMessageCount((prev) => prev + 1);
 
     // 포인트 지급 (메시지당 2포인트)
     onPointsEarned(2);
@@ -167,9 +189,9 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
         id: (Date.now() + 1).toString(),
         content: botResponse,
         isBot: true,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, botMessage]);
+      setMessages((prev) => [...prev, botMessage]);
     }, 1000);
 
     setInputMessage('');
@@ -181,7 +203,8 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
   };
 
   const generateBotResponse = (userInput: string, scenario: string): string => {
-    const scenarioResponses = botResponses[scenario as keyof typeof botResponses].responses;
+    const scenarioResponses =
+      botResponses[scenario as keyof typeof botResponses].responses;
     const lowerInput = userInput.toLowerCase();
 
     // 키워드 매칭
@@ -201,9 +224,10 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    
+
     recognition.lang = 'ko-KR';
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -228,6 +252,26 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
     recognition.start();
   };
 
+  // ---------------------------
+  // 대화 삭제 API 호출 핸들러 추가
+  const handleDelete = async (conversationId: string) => {
+    const token = localStorage.getItem('jwtToken') || '';
+    try {
+      const data = await deleteConversation(conversationId, token);
+      if (data.success) {
+        alert('대화가 성공적으로 삭제되었습니다.');
+        setMessages((prev) => prev.filter((msg) => msg.id !== conversationId));
+        setMessageCount((prev) => prev - 1);
+      } else {
+        alert('삭제 실패: ' + (data.message || ''));
+      }
+    } catch (error) {
+      alert('서버 오류가 발생했습니다.');
+    }
+  };
+
+  // ---------------------------
+  // UI에 삭제 버튼 추가하는 부분
   if (!selectedScenario) {
     return (
       <div className="web-container mx-auto p-6 space-y-6">
@@ -250,7 +294,7 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card 
+              <Card
                 className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 h-full"
                 onClick={() => startScenario(scenario.id)}
               >
@@ -260,12 +304,8 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
                   <p className="text-sm text-gray-600">{scenario.description}</p>
-                  <Badge className={scenario.color}>
-                    대화 연습
-                  </Badge>
-                  <Button className="w-full">
-                    시작하기
-                  </Button>
+                  <Badge className={scenario.color}>대화 연습</Badge>
+                  <Button className="w-full">시작하기</Button>
                 </CardContent>
               </Card>
             </motion.div>
@@ -277,7 +317,9 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
             <div className="flex items-start space-x-4">
               <div className="text-3xl">🤖</div>
               <div>
-                <h4 className="text-lg font-medium text-gray-800 mb-2">AI 대화 연습 방법</h4>
+                <h4 className="text-lg font-medium text-gray-800 mb-2">
+                  AI 대화 연습 방법
+                </h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• 상황에 맞는 대화를 선택하세요</li>
                   <li>• 자연스러운 대화를 나누어보세요</li>
@@ -292,7 +334,9 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
     );
   }
 
-  const currentScenario = scenarios.find(s => s.id === selectedScenario)!;
+  const currentScenario = scenarios.find(
+    (s) => s.id === selectedScenario
+  )!;
 
   return (
     <div className="web-container mx-auto p-6">
@@ -321,33 +365,63 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
               <span>AI 대화 연습</span>
             </CardTitle>
           </CardHeader>
-          
+
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message) => (
               <motion.div
                 key={message.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
+                className={`flex ${
+                  message.isBot ? 'justify-start' : 'justify-end'
+                }`}
               >
-                <div className={`flex items-start space-x-2 max-w-[70%] ${message.isBot ? '' : 'flex-row-reverse space-x-reverse'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${
-                    message.isBot 
-                      ? 'bg-gradient-to-r from-blue-400 to-blue-600' 
-                      : 'bg-gradient-to-r from-purple-400 to-purple-600'
-                  }`}>
-                    {message.isBot ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                <div
+                  className={`flex items-start space-x-2 max-w-[70%] ${
+                    message.isBot
+                      ? ''
+                      : 'flex-row-reverse space-x-reverse'
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${
+                      message.isBot
+                        ? 'bg-gradient-to-r from-blue-400 to-blue-600'
+                        : 'bg-gradient-to-r from-purple-400 to-purple-600'
+                    }`}
+                  >
+                    {message.isBot ? (
+                      <Bot className="w-4 h-4" />
+                    ) : (
+                      <User className="w-4 h-4" />
+                    )}
                   </div>
-                  <div className={`p-3 rounded-lg ${
-                    message.isBot 
-                      ? 'bg-gray-100 text-gray-800' 
-                      : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-                  }`}>
+                  <div
+                    className={`p-3 rounded-lg ${
+                      message.isBot
+                        ? 'bg-gray-100 text-gray-800'
+                        : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                    }`}
+                  >
                     <p>{message.content}</p>
-                    <div className={`text-xs mt-1 ${message.isBot ? 'text-gray-500' : 'text-blue-100'}`}>
+                    <div
+                      className={`text-xs mt-1 ${
+                        message.isBot ? 'text-gray-500' : 'text-blue-100'
+                      }`}
+                    >
                       {message.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
+
+                  {/* 삭제 버튼 - 사용자 메시지에만 노출 */}
+                  {!message.isBot && (
+                    <button
+                      onClick={() => handleDelete(message.id)}
+                      className="ml-2 px-2 py-1 text-xs text-red-600 border border-red-600 rounded hover:bg-red-100"
+                    >
+                      삭제
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))}
