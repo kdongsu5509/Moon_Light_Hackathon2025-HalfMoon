@@ -153,6 +153,18 @@ public class PostService {
             throw new IllegalArgumentException("게시글 삭제 권한이 없습니다.");
         }
 
+        //관련 댓글 모두 삭제
+        List<Comment> relatedComments = commentJpaRepository.findByPostId(postId);
+        for (Comment comment : relatedComments) {
+            //댓글에 달린 좋아요 모두 삭제
+            List<CommentLike> relatedCommentLikes = commentLikeRepository.findByCommentId(comment.getId());
+            commentLikeRepository.deleteAll(relatedCommentLikes);
+        }
+        commentJpaRepository.deleteAll(relatedComments);
+
+        //게시글에 달린 좋아요 모두 삭제
+        List<PostLike> relatedPostLikes = postLikeRepository.findByPostId(postId);
+
         postRepository.delete(post);
     }
 }

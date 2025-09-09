@@ -14,7 +14,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,17 +65,6 @@ public class CommentController {
             @Parameter(description = "댓글 ID (UUID)")
             @PathVariable UUID commentId) {
         service.likeComment(userDetails.getUsername(), commentId);
-        return APIResponse.success();
-    }
-
-    @Operation(summary = "댓글 삭제", description = "특정 댓글을 삭제합니다.")
-    @DeleteMapping("/delete/{commentId}")
-    public APIResponse<Void> deleteComment(
-            @Parameter(description = "사용자 이메일 (인증 정보)", hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Parameter(description = "댓글 ID (UUID)")
-            @PathVariable UUID commentId) {
-        service.deleteComment(userDetails.getUsername(), commentId);
         return APIResponse.success();
     }
 }

@@ -10,4 +10,6 @@ public interface CommentLikeJpaRepository extends JpaRepository<CommentLike, UUI
     List<CommentLike> findByUserEmail(String userEmail);
 
     Optional<CommentLike> findByUserEmailAndCommentId(String email, UUID commentId);
+
+    List<CommentLike> findByCommentId(UUID id);
 }

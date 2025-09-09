@@ -10,4 +10,6 @@ public interface PostLikeJpaRepository extends JpaRepository<PostLike, UUID> {
     List<PostLike> findByUserEmail(String userEmail);
 
     Optional<PostLike> findByUserEmailAndPostId(String userEmail, UUID postId);
+
+    List<PostLike> findByPostId(UUID postId);
 }

@@ -10,11 +10,9 @@ import org.springframework.data.repository.query.Param;
 public interface MontlyGoalJpaRepository extends JpaRepository<MonthlyGoal, UUID> {
     Optional<MonthlyGoal> findMonthlyGoalByUserEmail(String userEmail);
 
-    @Query(value = "SELECT COUNT(*) + 1 "
-            + "FROM monthly_goal mg "
-            + "WHERE mg.current_points > (SELECT mg2.current_points "
-            + "                             FROM monthly_goal mg2 "
-            + "                             WHERE mg2.user_id = :userId AND mg2.month = :month)",
-            nativeQuery = true)
+    @Query("SELECT COUNT(mg) + 1 FROM MonthlyGoal mg "
+            + "WHERE mg.currentPoints > (SELECT mg2.currentPoints "
+            + "                         FROM MonthlyGoal mg2 "
+            + "                         WHERE mg2.user.id = :userId AND mg2.targetMonth = :month)")
     Long getUserRank(@Param("userId") UUID userId, @Param("month") String month);
 }

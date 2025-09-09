@@ -17,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MonthlyGoalService {
 
-    private MontlyGoalJpaRepository goalRepository;
-    private UserRepository userRepository;
+    private final MontlyGoalJpaRepository goalRepository;
+    private final UserRepository userRepository;
 
     public MontlyGoalResponseDto getUserMontlyGoal(String userEmail) {
         Optional<MonthlyGoal> findGoal = goalRepository.findMonthlyGoalByUserEmail(userEmail);
@@ -32,7 +32,7 @@ public class MonthlyGoalService {
 
     private MontlyGoalResponseDto toDto(MonthlyGoal goal) {
         return new MontlyGoalResponseDto(
-                goal.getMonth(),
+                goal.getTargetMonth(),
                 goal.getGoalPoints(),
                 goal.getCurrentPoints()
         );

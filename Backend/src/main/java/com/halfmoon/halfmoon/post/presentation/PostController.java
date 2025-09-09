@@ -14,7 +14,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -74,18 +73,6 @@ public class PostController {
             @Parameter(description = "좋아요를 누를 게시글의 ID (UUID)")
             @PathVariable UUID postId) {
         postService.likePost(userDetails.getUsername(), postId);
-        return APIResponse.success();
-    }
-
-
-    @Operation(summary = "게시글 삭제", description = "특정 게시글을 삭제합니다.")
-    @DeleteMapping("/{postId}")
-    public APIResponse<Void> deletePost(
-            @Parameter(description = "사용자 정보 (인증 객체)", hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Parameter(description = "삭제할 게시글의 ID (UUID)")
-            @PathVariable UUID postId) {
-        postService.deletePost(userDetails.getUsername(), postId);
         return APIResponse.success();
     }
 }

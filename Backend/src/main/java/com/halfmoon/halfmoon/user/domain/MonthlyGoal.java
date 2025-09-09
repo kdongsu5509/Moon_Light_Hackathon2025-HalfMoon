@@ -25,7 +25,7 @@ public class MonthlyGoal {
     private Long goalPoints;
     private Long currentPoints;
 
-    private String month; // Format: "YYYY-MM"
+    private String targetMonth; // Format: "YYYY-MM"
 
     @ManyToOne(fetch = LAZY)
     private User user;
@@ -35,10 +35,10 @@ public class MonthlyGoal {
         return new MonthlyGoal(goalPoints, month, user);
     }
 
-    private MonthlyGoal(Long goalPoints, String month, User user) {
+    private MonthlyGoal(Long goalPoints, String targetMonth, User user) {
         this.goalPoints = goalPoints;
         this.currentPoints = 0L;
-        this.month = month;
+        this.targetMonth = targetMonth;
         this.user = user;
     }
 
