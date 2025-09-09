@@ -12,6 +12,7 @@ import com.halfmoon.halfmoon.study.dto.resp.ConversationStartResponse;
 import com.halfmoon.halfmoon.user.domain.StudyRecord;
 import com.halfmoon.halfmoon.user.infra.StudyRecordJpaRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.messages.UserMessage;
@@ -21,6 +22,7 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -68,16 +70,17 @@ public class ChatService {
     }
 
     public String continueConversation(ConversationContinueRequest req) {
-        ChatMemory chatMemory = ChatMemoryLocalStorage.getChatMemory(req.conversationId());
+        log.info("continueConversation called with talkId: {}", req.talkId());
+        ChatMemory chatMemory = ChatMemoryLocalStorage.getChatMemory(req.talkId());
         if (chatMemory == null) {
-            throw new IllegalArgumentException("유효하지 않은 conversationId 입니다: " + req.conversationId());
+            throw new IllegalArgumentException("유효하지 않은 talkId 입니다: " + req.talkId());
         }
 
         String userMessageContent = req.userInput();
         UserMessage userMessage = new UserMessage(userMessageContent);
-        chatMemory.add(req.conversationId(), userMessage);
-        ChatResponse response = chatModel.call(new Prompt(chatMemory.get(req.conversationId())));
-        chatMemory.add(req.conversationId(), response.getResult().getOutput());
+        chatMemory.add(req.talkId(), userMessage);
+        ChatResponse response = chatModel.call(new Prompt(chatMemory.get(req.talkId())));
+        chatMemory.add(req.talkId(), response.getResult().getOutput());
 
         return response.getResult().getOutput().getText();
     }
@@ -85,7 +88,7 @@ public class ChatService {
     public String continueConversationWithVoice(ConversationContinueVoiceRequest req) {
         ChatMemory chatMemory = ChatMemoryLocalStorage.getChatMemory(req.conversationId());
         if (chatMemory == null) {
-            throw new IllegalArgumentException("유효하지 않은 conversationId 입니다: " + req.conversationId());
+            throw new IllegalArgumentException("유효하지 않은 talkId 입니다: " + req.conversationId());
         }
 
         //음성 -> 텍스트 변환
