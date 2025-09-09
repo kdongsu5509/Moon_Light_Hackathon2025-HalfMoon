@@ -40,4 +40,12 @@ public class StudyRecord {
         studyRecord.user = user;
         return studyRecord;
     }
+
+    public void addTotalNewWordsCount(Long newWordsCount) {
+        wordCnt += newWordsCount;
+    }
+
+    public void incrementFinishedConversationCount() {
+        talkCnt += 1;
+    }
 }
