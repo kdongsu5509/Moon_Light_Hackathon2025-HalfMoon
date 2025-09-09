@@ -5,128 +5,96 @@ import { Mic, MicOff } from 'lucide-react';
 import { useLanguage } from './language-context';
 
 interface SpeechRecognitionProps {
-  targetPhrase: string;
+  conversationId: string;
   onSuccess: () => void;
   onAttempt: () => void;
 }
 
-export function SpeechRecognition({ targetPhrase, onSuccess, onAttempt }: SpeechRecognitionProps) {
-  const { t } = useLanguage();
-  const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [feedback, setFeedback] = useState('');
-  const recognitionRef = useRef<any>(null);
+// 백엔드 명세에 맞는 API 호출 함수
+async function continueVoiceConversation(conversationId: string, audioBytes: number[], token: string) {
+  const response = await fetch('/api/chat/continue/voice', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      conversationId,
+      audioData: audioBytes,
+    }),
+  });
+  const data = await response.json();
+  return data.data; // AI 텍스트 응답
+}
 
-  const startListening = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      setFeedback('음성 인식이 지원되지 않는 브라우저입니다.');
+export function SpeechRecognition({ conversationId, onSuccess, onAttempt }: SpeechRecognitionProps) {
+  const { t } = useLanguage();
+  const [isRecording, setIsRecording] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [aiResponse, setAIResponse] = useState('');
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setFeedback('음성 녹음이 지원되지 않는 브라우저입니다.');
       return;
     }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    audioChunks.current = [];
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
-    
-    recognitionRef.current.lang = 'ko-KR';
-    recognitionRef.current.continuous = false;
-    recognitionRef.current.interimResults = false;
-
-    recognitionRef.current.onstart = () => {
-      setIsListening(true);
-      setTranscript('');
-      setFeedback('');
+    mediaRecorder.ondataavailable = (event: BlobEvent) => {
+      audioChunks.current.push(event.data);
     };
 
-    recognitionRef.current.onresult = (event: any) => {
-      const spokenText = event.results[0][0].transcript;
-      setTranscript(spokenText);
-      onAttempt();
-      
-      // Simple similarity check
-      const similarity = calculateSimilarity(spokenText.toLowerCase(), targetPhrase.toLowerCase());
-      
-      if (similarity > 0.8) {
-        setFeedback(t('excellent'));
+    mediaRecorder.onstop = async () => {
+      setIsRecording(false);
+      const audioBlob = new Blob(audioChunks.current, { type: 'audio/wav' });
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+
+      const token = localStorage.getItem('jwtToken') || '';
+      try {
+        const aiText = await continueVoiceConversation(conversationId, Array.from(uint8Array), token);
+        setAIResponse(aiText);
         onSuccess();
-      } else if (similarity > 0.6) {
-        setFeedback(t('goodJob'));
-      } else {
-        setFeedback(t('keepTrying'));
+      } catch {
+        setFeedback('서버와 통신 중 오류가 발생했습니다.');
       }
     };
 
-    recognitionRef.current.onerror = (event: any) => {
-      setFeedback(`오류: ${event.error}`);
-      setIsListening(false);
-    };
-
-    recognitionRef.current.onend = () => {
-      setIsListening(false);
-    };
-
-    recognitionRef.current.start();
+    mediaRecorder.start();
+    setIsRecording(true);
+    setFeedback('');
+    setAIResponse('');
+    onAttempt();
   };
 
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    setIsListening(false);
-  };
-
-  // Simple Levenshtein distance for similarity calculation
-  const calculateSimilarity = (str1: string, str2: string): number => {
-    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
-    
-    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
-    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
-    
-    for (let j = 1; j <= str2.length; j++) {
-      for (let i = 1; i <= str1.length; i++) {
-        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
-        matrix[j][i] = Math.min(
-          matrix[j][i - 1] + 1,
-          matrix[j - 1][i] + 1,
-          matrix[j - 1][i - 1] + indicator
-        );
-      }
-    }
-    
-    const maxLen = Math.max(str1.length, str2.length);
-    return maxLen === 0 ? 1 : (maxLen - matrix[str2.length][str1.length]) / maxLen;
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
   };
 
   return (
     <Card className="p-4">
       <CardContent className="space-y-4">
         <div className="text-center">
-          <p className="text-lg mb-4">연습할 문장: <strong>{targetPhrase}</strong></p>
-          
           <Button
-            onClick={isListening ? stopListening : startListening}
-            className={`w-20 h-20 rounded-full ${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}
+            onClick={isRecording ? stopRecording : startRecording}
+            className={`w-20 h-20 rounded-full ${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}
           >
-            {isListening ? <MicOff size={30} /> : <Mic size={30} />}
+            {isRecording ? <MicOff size={30} /> : <Mic size={30} />}
           </Button>
-          
           <p className="mt-2 text-sm text-muted-foreground">
-            {isListening ? t('listening') : t('speakNow')}
+            {isRecording ? t('recording') : t('clickToSpeak')}
           </p>
         </div>
-
-        {transcript && (
-          <div className="p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">인식된 음성:</p>
-            <p className="font-medium">{transcript}</p>
-          </div>
-        )}
-
-        {feedback && (
-          <div className={`p-3 rounded-lg text-center font-medium ${
-            feedback === t('excellent') ? 'bg-green-100 text-green-800' :
-            feedback === t('goodJob') ? 'bg-yellow-100 text-yellow-800' :
-            'bg-blue-100 text-blue-800'
-          }`}>
-            {feedback}
+        {feedback && <div className="text-red-600 font-semibold">{feedback}</div>}
+        {aiResponse && (
+          <div>
+            <h4>AI 응답:</h4>
+            <p>{aiResponse}</p>
           </div>
         )}
       </CardContent>
