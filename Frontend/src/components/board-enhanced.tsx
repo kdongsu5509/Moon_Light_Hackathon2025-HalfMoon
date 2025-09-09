@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useLanguage } from './language-context';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -21,6 +21,7 @@ interface Post {
   replies: Comment[];
   views: number;
   isPopular?: boolean;
+  isLiked?: boolean;
 }
 
 interface Comment {
@@ -29,10 +30,13 @@ interface Comment {
   author: string;
   timestamp: Date;
   likes: number;
+  isLiked?: boolean;
 }
 
 export function BoardEnhanced() {
   const { t, currentLanguage } = useLanguage();
+  
+  // 기존 더미 데이터로 초기화 (API 실패 시 fallback)
   const [posts, setPosts] = useState<Post[]>([
     {
       id: '1',
@@ -43,11 +47,12 @@ export function BoardEnhanced() {
       timestamp: new Date(2024, 11, 15),
       likes: 23,
       replies: [
-        { id: '1-1', content: '환영해요! 저도 처음에 발음이 어려웠는데 계속 연습하면 늘어요!', author: '지영', timestamp: new Date(2024, 11, 15), likes: 5 },
-        { id: '1-2', content: '함께 열심히 해요~ 화이팅!', author: '준호', timestamp: new Date(2024, 11, 15), likes: 3 }
+        { id: '1-1', content: '환영해요! 저도 처음에 발음이 어려웠는데 계속 연습하면 늘어요!', author: '지영', timestamp: new Date(2024, 11, 15), likes: 5, isLiked: false },
+        { id: '1-2', content: '함께 열심히 해요~ 화이팅!', author: '준호', timestamp: new Date(2024, 11, 15), likes: 3, isLiked: false }
       ],
       views: 156,
-      isPopular: true
+      isPopular: true,
+      isLiked: false
     },
     {
       id: '2',
@@ -58,10 +63,11 @@ export function BoardEnhanced() {
       timestamp: new Date(2024, 11, 14),
       likes: 18,
       replies: [
-        { id: '2-1', content: '안녕하세요! 저도 베트남어 조금 배워요. 서로 도와요!', author: '수진', timestamp: new Date(2024, 11, 14), likes: 7 }
+        { id: '2-1', content: '안녕하세요! 저도 베트남어 조금 배워요. 서로 도와요!', author: '수진', timestamp: new Date(2024, 11, 14), likes: 7, isLiked: false }
       ],
       views: 89,
-      isPopular: true
+      isPopular: true,
+      isLiked: false
     },
     {
       id: '3',
@@ -72,11 +78,12 @@ export function BoardEnhanced() {
       timestamp: new Date(2024, 11, 13),
       likes: 31,
       replies: [
-        { id: '3-1', content: '발음 앱을 사용해보세요! 정말 도움이 돼요.', author: '현우', timestamp: new Date(2024, 11, 13), likes: 8 },
-        { id: '3-2', content: '저도 중국어 배우고 있어요. 언어교환 어때요?', author: '미영', timestamp: new Date(2024, 11, 13), likes: 6 }
+        { id: '3-1', content: '발음 앱을 사용해보세요! 정말 도움이 돼요.', author: '현우', timestamp: new Date(2024, 11, 13), likes: 8, isLiked: false },
+        { id: '3-2', content: '저도 중국어 배우고 있어요. 언어교환 어때요?', author: '미영', timestamp: new Date(2024, 11, 13), likes: 6, isLiked: false }
       ],
       views: 203,
-      isPopular: true
+      isPopular: true,
+      isLiked: false
     },
     {
       id: '4',
@@ -87,7 +94,8 @@ export function BoardEnhanced() {
       timestamp: new Date(2024, 11, 12),
       likes: 15,
       replies: [],
-      views: 67
+      views: 67,
+      isLiked: false
     },
     {
       id: '5',
@@ -98,87 +106,296 @@ export function BoardEnhanced() {
       timestamp: new Date(2024, 11, 11),
       likes: 12,
       replies: [
-        { id: '5-1', content: '"사랑의 불시착" 추천해요! 재미있고 한국어 공부에도 좋아요.', author: '태영', timestamp: new Date(2024, 11, 11), likes: 4 }
+        { id: '5-1', content: '"사랑의 불시착" 추천해요! 재미있고 한국어 공부에도 좋아요.', author: '태영', timestamp: new Date(2024, 11, 11), likes: 4, isLiked: false }
       ],
-      views: 94
+      views: 94,
+      isLiked: false
     }
   ]);
 
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isNewPostDialogOpen, setIsNewPostDialogOpen] = useState(false);
+  const [isPostDetailDialogOpen, setIsPostDetailDialogOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '', author: '' });
   const [newComment, setNewComment] = useState('');
   const [showTranslation, setShowTranslation] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
+  const [useApi, setUseApi] = useState(false); // API 사용 여부 토글
 
-  const handleSubmitPost = () => {
-    if (newPost.title && newPost.content && newPost.author) {
-      const post: Post = {
-        id: Date.now().toString(),
-        title: newPost.title,
-        content: newPost.content,
-        author: newPost.author,
-        language: currentLanguage,
-        timestamp: new Date(),
-        likes: 0,
-        replies: [],
-        views: 0
-      };
-      setPosts([post, ...posts]);
-      setNewPost({ title: '', content: '', author: '' });
-      setIsDialogOpen(false);
+  // 공통 헤더 생성 함수
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('jwtToken') || '';
+    return {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: '*/*',
+    };
+  };
+
+  // API 함수들
+  const createPost = async (title: string, content: string) => {
+    try {
+      const response = await fetch('/api/post', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ title, content }),
+      });
+      const data = await response.json();
+      if (data.code !== 200) throw new Error('게시글 생성 실패');
+      return data.data;
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
     }
   };
 
-  const handleSubmitComment = () => {
-    if (newComment && selectedPost) {
+  const fetchAllPosts = async () => {
+    try {
+      const response = await fetch('/api/post/all', {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      const data = await response.json();
+      if (data.code !== 200) throw new Error('게시글 조회 실패');
+      
+      const postsData: Post[] = data.data.map((p: any) => ({
+        id: p.postId,
+        title: p.title,
+        content: p.content,
+        author: p.creatorNickname,
+        language: currentLanguage,
+        timestamp: new Date(p.createdAt),
+        likes: p.likeCount,
+        replies: [],
+        views: p.viewCount,
+        isPopular: p.likeCount >= 20,
+        isLiked: p.isLiked,
+      }));
+      setPosts(postsData);
+    } catch (error) {
+      console.error('API Error:', error);
+      // API 실패 시 더미 데이터 유지
+    }
+  };
+
+  const togglePostLike = async (postId: string) => {
+    if (!useApi) {
+      // 기존 로컬 처리
+      const isLiked = likedPosts.has(postId);
+      
+      if (isLiked) {
+        setLikedPosts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
+        setPosts(posts.map(post => 
+          post.id === postId 
+            ? { ...post, likes: Math.max(0, post.likes - 1), isLiked: false }
+            : post
+        ));
+        if (selectedPost && selectedPost.id === postId) {
+          setSelectedPost({ ...selectedPost, likes: Math.max(0, selectedPost.likes - 1), isLiked: false });
+        }
+      } else {
+        setLikedPosts(prev => new Set(prev).add(postId));
+        setPosts(posts.map(post => 
+          post.id === postId 
+            ? { ...post, likes: post.likes + 1, isLiked: true }
+            : post
+        ));
+        if (selectedPost && selectedPost.id === postId) {
+          setSelectedPost({ ...selectedPost, likes: selectedPost.likes + 1, isLiked: true });
+        }
+      }
+      return;
+    }
+
+    try {
+      await fetch(`/api/post/like/${postId}`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: '',
+      });
+      
+      const isLiked = likedPosts.has(postId);
+      setPosts(posts.map(post =>
+        post.id === postId
+          ? { ...post, likes: isLiked ? post.likes - 1 : post.likes + 1, isLiked: !isLiked }
+          : post
+      ));
+      
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost({ 
+          ...selectedPost, 
+          likes: isLiked ? selectedPost.likes - 1 : selectedPost.likes + 1, 
+          isLiked: !isLiked 
+        });
+      }
+      
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        isLiked ? newSet.delete(postId) : newSet.add(postId);
+        return newSet;
+      });
+    } catch (error) {
+      console.error('API Error:', error);
+      // API 실패 시 로컬 처리로 fallback
+      const isLiked = likedPosts.has(postId);
+      
+      if (isLiked) {
+        setLikedPosts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
+        setPosts(posts.map(post => 
+          post.id === postId 
+            ? { ...post, likes: Math.max(0, post.likes - 1), isLiked: false }
+            : post
+        ));
+      } else {
+        setLikedPosts(prev => new Set(prev).add(postId));
+        setPosts(posts.map(post => 
+          post.id === postId 
+            ? { ...post, likes: post.likes + 1, isLiked: true }
+            : post
+        ));
+      }
+    }
+  };
+
+  const fetchPostDetail = async (postId: string) => {
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    if (!useApi) {
+      // 기존 로컬 처리
+      setSelectedPost({
+        ...post,
+        views: post.views + 1
+      });
+      // 조회수 증가
+      setPosts(posts.map(p => p.id === postId ? { ...p, views: p.views + 1 } : p));
+      setIsPostDetailDialogOpen(true);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/post/${postId}`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+      const data = await response.json();
+      if (data.code !== 200) throw new Error('상세 조회 실패');
+
+      const postData = data.data;
+      const comments: Comment[] = postData.comments.map((c: any) => ({
+        id: c.id,
+        content: c.content,
+        author: c.creatorNickname,
+        timestamp: new Date(c.createdAt),
+        likes: c.likeCount,
+        isLiked: c.isLiked,
+      }));
+
+      setSelectedPost({
+        id: postData.postId,
+        title: postData.title,
+        content: postData.content,
+        author: postData.creatorNickname,
+        language: currentLanguage,
+        timestamp: new Date(postData.createdAt),
+        likes: postData.likeCount,
+        replies: comments,
+        views: postData.viewCount,
+        isPopular: postData.likeCount >= 20,
+        isLiked: postData.isLiked,
+      });
+      setIsPostDetailDialogOpen(true);
+    } catch (error) {
+      console.error('API Error:', error);
+      // API 실패 시 로컬 데이터로 fallback
+      setSelectedPost({
+        ...post,
+        views: post.views + 1
+      });
+      setPosts(posts.map(p => p.id === postId ? { ...p, views: p.views + 1 } : p));
+      setIsPostDetailDialogOpen(true);
+    }
+  };
+
+  const addComment = async (postId: string, content: string) => {
+    if (!useApi) {
+      // 기존 로컬 처리
       const comment: Comment = {
         id: Date.now().toString(),
-        content: newComment,
-        author: '나', // 현재 사용자
+        content: content,
+        author: '나',
         timestamp: new Date(),
-        likes: 0
+        likes: 0,
+        isLiked: false
       };
       
       const updatedPosts = posts.map(post => 
-        post.id === selectedPost.id 
+        post.id === postId 
           ? { ...post, replies: [...post.replies, comment] }
           : post
       );
       setPosts(updatedPosts);
-      setSelectedPost({...selectedPost, replies: [...selectedPost.replies, comment]});
+      
+      if (selectedPost) {
+        setSelectedPost({...selectedPost, replies: [...selectedPost.replies, comment]});
+      }
+      setNewComment('');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/comments/add/${postId}?req=${encodeURIComponent(JSON.stringify({ content }))}`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: '',
+      });
+      const data = await response.json();
+      if (data.code !== 200) throw new Error('댓글 추가 실패');
+
+      // 상세글 다시 불러와 댓글 갱신
+      await fetchPostDetail(postId);
+      setNewComment('');
+    } catch (error) {
+      console.error('API Error:', error);
+      // API 실패 시 로컬 처리로 fallback
+      const comment: Comment = {
+        id: Date.now().toString(),
+        content: content,
+        author: '나',
+        timestamp: new Date(),
+        likes: 0,
+        isLiked: false
+      };
+      
+      const updatedPosts = posts.map(post => 
+        post.id === postId 
+          ? { ...post, replies: [...post.replies, comment] }
+          : post
+      );
+      setPosts(updatedPosts);
+      
+      if (selectedPost) {
+        setSelectedPost({...selectedPost, replies: [...selectedPost.replies, comment]});
+      }
       setNewComment('');
     }
   };
 
-  const handleLike = (postId: string) => {
-    const isLiked = likedPosts.has(postId);
-    
-    if (isLiked) {
-      setLikedPosts(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(postId);
-        return newSet;
-      });
-      setPosts(posts.map(post => 
-        post.id === postId 
-          ? { ...post, likes: Math.max(0, post.likes - 1) }
-          : post
-      ));
-    } else {
-      setLikedPosts(prev => new Set(prev).add(postId));
-      setPosts(posts.map(post => 
-        post.id === postId 
-          ? { ...post, likes: post.likes + 1 }
-          : post
-      ));
-    }
-  };
+  const toggleCommentLike = async (commentId: string) => {
+    if (!selectedPost) return;
 
-  const handleCommentLike = (commentId: string) => {
-    if (selectedPost) {
+    if (!useApi) {
+      // 기존 로컬 처리
       const isLiked = likedComments.has(commentId);
       
       if (isLiked) {
@@ -188,16 +405,127 @@ export function BoardEnhanced() {
           return newSet;
         });
         const updatedReplies = selectedPost.replies.map(reply =>
-          reply.id === commentId ? { ...reply, likes: Math.max(0, reply.likes - 1) } : reply
+          reply.id === commentId ? { ...reply, likes: Math.max(0, reply.likes - 1), isLiked: false } : reply
         );
         setSelectedPost({ ...selectedPost, replies: updatedReplies });
       } else {
         setLikedComments(prev => new Set(prev).add(commentId));
         const updatedReplies = selectedPost.replies.map(reply =>
-          reply.id === commentId ? { ...reply, likes: reply.likes + 1 } : reply
+          reply.id === commentId ? { ...reply, likes: reply.likes + 1, isLiked: true } : reply
         );
         setSelectedPost({ ...selectedPost, replies: updatedReplies });
       }
+      return;
+    }
+
+    try {
+      await fetch(`/api/comments/like/${commentId}`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: '',
+      });
+
+      const isLiked = likedComments.has(commentId);
+      const updatedReplies = selectedPost.replies.map(reply =>
+        reply.id === commentId
+          ? { ...reply, likes: isLiked ? reply.likes - 1 : reply.likes + 1, isLiked: !isLiked }
+          : reply
+      );
+      setSelectedPost({ ...selectedPost, replies: updatedReplies });
+
+      setLikedComments(prev => {
+        const newSet = new Set(prev);
+        isLiked ? newSet.delete(commentId) : newSet.add(commentId);
+        return newSet;
+      });
+    } catch (error) {
+      console.error('API Error:', error);
+      // API 실패 시 로컬 처리로 fallback
+      const isLiked = likedComments.has(commentId);
+      
+      if (isLiked) {
+        setLikedComments(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(commentId);
+          return newSet;
+        });
+        const updatedReplies = selectedPost.replies.map(reply =>
+          reply.id === commentId ? { ...reply, likes: Math.max(0, reply.likes - 1), isLiked: false } : reply
+        );
+        setSelectedPost({ ...selectedPost, replies: updatedReplies });
+      } else {
+        setLikedComments(prev => new Set(prev).add(commentId));
+        const updatedReplies = selectedPost.replies.map(reply =>
+          reply.id === commentId ? { ...reply, likes: reply.likes + 1, isLiked: true } : reply
+        );
+        setSelectedPost({ ...selectedPost, replies: updatedReplies });
+      }
+    }
+  };
+
+  // 이벤트 핸들러들
+  const handleSubmitPost = async () => {
+    if (newPost.title && newPost.content && newPost.author) {
+      if (!useApi) {
+        // 기존 로컬 처리
+        const post: Post = {
+          id: Date.now().toString(),
+          title: newPost.title,
+          content: newPost.content,
+          author: newPost.author,
+          language: currentLanguage,
+          timestamp: new Date(),
+          likes: 0,
+          replies: [],
+          views: 0,
+          isLiked: false
+        };
+        setPosts([post, ...posts]);
+        setNewPost({ title: '', content: '', author: '' });
+        setIsNewPostDialogOpen(false);
+        return;
+      }
+
+      try {
+        await createPost(newPost.title, newPost.content);
+        await fetchAllPosts();
+        setNewPost({ title: '', content: '', author: '' });
+        setIsNewPostDialogOpen(false);
+        alert('게시글이 성공적으로 작성되었습니다.');
+      } catch (error) {
+        console.error('API Error:', error);
+        // API 실패 시 로컬 처리로 fallback
+        const post: Post = {
+          id: Date.now().toString(),
+          title: newPost.title,
+          content: newPost.content,
+          author: newPost.author,
+          language: currentLanguage,
+          timestamp: new Date(),
+          likes: 0,
+          replies: [],
+          views: 0,
+          isLiked: false
+        };
+        setPosts([post, ...posts]);
+        setNewPost({ title: '', content: '', author: '' });
+        setIsNewPostDialogOpen(false);
+        alert('게시글이 작성되었습니다. (오프라인 모드)');
+      }
+    }
+  };
+
+  const handleLike = (postId: string) => {
+    togglePostLike(postId);
+  };
+
+  const handleCommentLike = (commentId: string) => {
+    toggleCommentLike(commentId);
+  };
+
+  const handleSubmitComment = () => {
+    if (newComment && selectedPost) {
+      addComment(selectedPost.id, newComment);
     }
   };
 
@@ -217,7 +545,6 @@ export function BoardEnhanced() {
   };
 
   const translateText = (text: string, fromLang: string) => {
-    // 실제로는 번역 API를 사용해야 하지만, 여기서는 데모용 번역
     const translations: { [key: string]: { [key: string]: string } } = {
       'vi': {
         'ko': 'Chào mọi người! → 안녕하세요 여러분!',
@@ -240,11 +567,18 @@ export function BoardEnhanced() {
       case 'popular':
         return posts.filter(post => post.isPopular || post.likes >= 20).sort((a, b) => b.likes - a.likes);
       case 'recent':
-        return posts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        return [...posts].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
       default:
         return posts;
     }
   };
+
+  // 컴포넌트 마운트 시 API 데이터 로드 시도
+  useEffect(() => {
+    if (useApi) {
+      fetchAllPosts();
+    }
+  }, [useApi]);
 
   return (
     <div className="web-container mx-auto p-6 space-y-6">
@@ -254,45 +588,56 @@ export function BoardEnhanced() {
           <h2 className="text-3xl text-gray-800 mb-2">커뮤니티 게시판</h2>
           <p className="text-gray-600">친구들과 소통하고 경험을 나누어요!</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
-              <PlusCircle className="w-4 h-4 mr-2" />
-              새 글 쓰기
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>새 게시글 작성</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Input
-                placeholder="제목을 입력하세요"
-                value={newPost.title}
-                onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-              />
-              <Input
-                placeholder="이름을 입력하세요"
-                value={newPost.author}
-                onChange={(e) => setNewPost({ ...newPost, author: e.target.value })}
-              />
-              <Textarea
-                placeholder="내용을 입력하세요"
-                value={newPost.content}
-                onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                rows={6}
-              />
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  취소
-                </Button>
-                <Button onClick={handleSubmitPost}>
-                  게시
-                </Button>
+        <div className="flex items-center space-x-3">
+          {/* API 토글 버튼 */}
+          <Button
+            variant={useApi ? "default" : "outline"}
+            size="sm"
+            onClick={() => setUseApi(!useApi)}
+            className="text-xs"
+          >
+            {useApi ? "API 모드" : "로컬 모드"}
+          </Button>
+          <Dialog open={isNewPostDialogOpen} onOpenChange={setIsNewPostDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                <PlusCircle className="w-4 h-4 mr-2" />
+                새 글 쓰기
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>새 게시글 작성</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input
+                  placeholder="제목을 입력하세요"
+                  value={newPost.title}
+                  onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                />
+                <Input
+                  placeholder="이름을 입력하세요"
+                  value={newPost.author}
+                  onChange={(e) => setNewPost({ ...newPost, author: e.target.value })}
+                />
+                <Textarea
+                  placeholder="내용을 입력하세요"
+                  value={newPost.content}
+                  onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                  rows={6}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setIsNewPostDialogOpen(false)}>
+                    취소
+                  </Button>
+                  <Button onClick={handleSubmitPost}>
+                    게시
+                  </Button>
+                </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -320,7 +665,7 @@ export function BoardEnhanced() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedPost(post)}>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => fetchPostDetail(post.id)}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -383,7 +728,7 @@ export function BoardEnhanced() {
                       }}
                       className="flex items-center space-x-1"
                     >
-                      <Heart className={`w-4 h-4 ${likedPosts.has(post.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                      <Heart className={`w-4 h-4 ${post.isLiked || likedPosts.has(post.id) ? 'fill-red-500 text-red-500' : ''}`} />
                       <span>{post.likes}</span>
                     </Button>
                     <Button
@@ -404,7 +749,7 @@ export function BoardEnhanced() {
 
       {/* Post Detail Dialog */}
       {selectedPost && (
-        <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
+        <Dialog open={isPostDetailDialogOpen} onOpenChange={setIsPostDetailDialogOpen}>
           <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
@@ -434,7 +779,7 @@ export function BoardEnhanced() {
                     onClick={() => handleLike(selectedPost.id)}
                     className="flex items-center space-x-1"
                   >
-                    <Heart className={`w-4 h-4 ${likedPosts.has(selectedPost.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                    <Heart className={`w-4 h-4 ${selectedPost.isLiked || likedPosts.has(selectedPost.id) ? 'fill-red-500 text-red-500' : ''}`} />
                     <span>{selectedPost.likes}</span>
                   </Button>
                 </div>
@@ -487,7 +832,7 @@ export function BoardEnhanced() {
                           onClick={() => handleCommentLike(comment.id)}
                           className="flex items-center space-x-1 mt-1"
                         >
-                          <Heart className={`w-3 h-3 ${likedComments.has(comment.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                          <Heart className={`w-3 h-3 ${comment.isLiked || likedComments.has(comment.id) ? 'fill-red-500 text-red-500' : ''}`} />
                           <span className="text-xs">{comment.likes}</span>
                         </Button>
                       </div>
@@ -500,6 +845,7 @@ export function BoardEnhanced() {
         </Dialog>
       )}
 
+      {/* Empty State */}
       {posts.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
