@@ -1,26 +1,25 @@
 # .github/workflows/ci-cd.yml
+
 name: Spring CI-CD with AWS
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - 'Backend/**'
+      - 'Backend/**' # ⭐ 'Backend' 디렉토리에서 변경이 있을 때만 워크플로우 실행
 
 env:
-  AWS_REGION: ap-northeast-2
+  AWS_REGION: ap-southeast-2
   ECR_REPOSITORY: hackathon/halfmoon
   CONTAINER_NAME: spring-app
-  PROJECT_PATH: ./Backend
+  PROJECT_PATH: ./Backend # ⭐ 프로젝트 루트 디렉토리 변수 추가
 
 jobs:
   # -------------------- CI (Build & Push to ECR) --------------------
   ci:
     name: Continuous Integration
     runs-on: ubuntu-latest
-
     
-    # ★ cd 잡에서 참조할 이미지 URI를 잡 출력으로 공개
     outputs:
       image_uri: ${{ steps.build-image.outputs.image }}
 
@@ -35,16 +34,17 @@ jobs:
           distribution: "temurin"
 
       - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
+        run: chmod +x ${{ env.PROJECT_PATH }}/gradlew # ⭐ 경로 변수 사용
 
       - name: Add application-secret.yaml
         env:
           SPRING_SECRET_YAML: ${{ secrets.SPRING_SECRET_YAML }}
         run: |
-          echo "$SPRING_SECRET_YAML" > src/main/resources/application-secret.yaml
+          echo "$SPRING_SECRET_YAML" > ${{ env.PROJECT_PATH }}/src/main/resources/application-secret.yaml # ⭐ 경로 변수 사용
 
       - name: Build with Gradle (do tests internally)
         run: ./gradlew clean build
+        working-directory: ${{ env.PROJECT_PATH }} # ⭐ 'Backend' 디렉토리에서 실행
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -64,7 +64,7 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           set -euo pipefail
-          docker build -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" .
+          docker build -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" -f ${{ env.PROJECT_PATH }}/Dockerfile ${{ env.PROJECT_PATH }} # ⭐ Dockerfile 경로와 빌드 컨텍스트 지정
           docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
@@ -73,19 +73,18 @@ jobs:
     name: Continuous Deployment
     needs: ci
     runs-on: ubuntu-latest
-
+    
     steps:
+      # CD 단계는 변경 사항 없음
       - name: Get GitHub Action VM IP
         id: ip
         uses: haythem/public-ip@v1.3
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
       - name: Add GitHub Action VM IP to EC2 security group (SSH)
         run: |
           aws ec2 authorize-security-group-ingress \
@@ -93,7 +92,6 @@ jobs:
             --protocol tcp \
             --port 22 \
             --cidr ${{ steps.ip.outputs.ipv4 }}/32
-
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -102,37 +100,24 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -euo pipefail
-
             IMAGE_URI='${{ needs.ci.outputs.image_uri }}'
             if [ -z "$IMAGE_URI" ]; then
               echo "ERROR: IMAGE_URI is empty. Check CI job outputs." >&2
               exit 1
             fi
-
             ECR_REGISTRY_URL="$(echo "$IMAGE_URI" | cut -d/ -f1)"
             if [ -z "$ECR_REGISTRY_URL" ]; then
               echo "ERROR: Failed to parse ECR registry from IMAGE_URI: $IMAGE_URI" >&2
               exit 1
             fi
-
-            # Optional sanity checks
             command -v docker >/dev/null 2>&1 || { echo "docker not found on EC2"; exit 1; }
             command -v aws >/dev/null 2>&1 || { echo "aws cli not found on EC2"; exit 1; }
-
-            # Login to ECR from EC2 (EC2에 ECR Pull 권한이 있는 IAM Role 필요)
             aws ecr get-login-password --region '${{ env.AWS_REGION }}' \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY_URL"
-
-            # Pull latest image for this commit
             docker pull "$IMAGE_URI"
-
-            # Stop & remove old container if exists
             docker stop '${{ env.CONTAINER_NAME }}' || true
-            docker rm   '${{ env.CONTAINER_NAME }}' || true
-
-            # Run new container
+            docker rm   '${{ env.CONTAINER_NAME }}' || true
             docker run -d -p 80:8080 --name '${{ env.CONTAINER_NAME }}' "$IMAGE_URI"
-
       - name: Remove GitHub Action VM IP from EC2 security group
         if: always()
         run: |
