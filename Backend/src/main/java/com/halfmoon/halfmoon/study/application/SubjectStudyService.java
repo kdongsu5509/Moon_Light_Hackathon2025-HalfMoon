@@ -14,6 +14,8 @@ import com.halfmoon.halfmoon.study.dto.resp.SubjectStudyContentsResponseDto;
 import com.halfmoon.halfmoon.study.dto.resp.SubjectStudySentence;
 import com.halfmoon.halfmoon.study.infra.SentenceJpaRepository;
 import com.halfmoon.halfmoon.study.infra.UserToStudyContentJpaRepository;
+import com.halfmoon.halfmoon.user.domain.StudyRecord;
+import com.halfmoon.halfmoon.user.infra.StudyRecordJpaRepository;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -40,6 +42,7 @@ public class SubjectStudyService {
     private final UserRepository userRepository; // 사용자 정보 접근 레포지토리
     private final UserToStudyContentJpaRepository userToStudyContentJpaRepository; // 사용자-학습내용 매핑 레포지토리
     private final SentenceJpaRepository sentenceJpaRepository; // 문장 정보 접근 레포지토리
+    private final StudyRecordJpaRepository studyRecordJpaRepository; // 사용자 학습 기록 레포지토리
 
     public SubjectStudyContentsResponseDto generateContents(String userEmail, SubjectStudyContenstRequestDto req) {
         //1. 사용자 정보 조회
@@ -72,6 +75,15 @@ public class SubjectStudyService {
                 () -> new IllegalArgumentException("해당 문장을 찾을 수 없습니다: " + sentenceId
                 )
         );
+
+        //2. 내 학습 기록 가져오기
+        StudyRecord studyRecord = studyRecordJpaRepository.findRecordByUserEmail(username).orElseThrow(
+                () -> new IllegalArgumentException("사용자 학습 기록을 찾을 수 없습니다: " + username)
+        );
+
+        //내가 학습한 단어 수 업데이트
+        Long newWordsCount = sentence.getNewWordsCount();
+        studyRecord.addTotalNewWordsCount(newWordsCount);
 
         //2. 해당 문장의 isDone 상태를 true로 변경
         sentence.markAsDone();

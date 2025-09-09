@@ -9,6 +9,8 @@ import com.halfmoon.halfmoon.study.dto.req.ConversationContinueVoiceRequest;
 import com.halfmoon.halfmoon.study.dto.req.ConversationStartRequest;
 import com.halfmoon.halfmoon.study.dto.req.Subject;
 import com.halfmoon.halfmoon.study.dto.resp.ConversationStartResponse;
+import com.halfmoon.halfmoon.user.domain.StudyRecord;
+import com.halfmoon.halfmoon.user.infra.StudyRecordJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -29,6 +31,7 @@ public class ChatService {
     private final TranscriptionService transcriptionService;
     private final OpenAiChatModel chatModel;
     private final UserRepository userRepository;
+    private final StudyRecordJpaRepository studyRecordJpaRepository;
 
     public ConversationStartResponse startConversation(String username, ConversationStartRequest request) {
         User user = userRepository.findByEmail(username).orElseThrow(
@@ -96,5 +99,15 @@ public class ChatService {
         chatMemory.add(req.conversationId(), response.getResult().getOutput());
 
         return response.getResult().getOutput().getText();
+    }
+
+    public void deleteConversation(String userEmail, String conversationId) {
+        StudyRecord studyRecord = studyRecordJpaRepository.findRecordByUserEmail(userEmail).orElseThrow(
+                () -> new IllegalArgumentException("사용자 학습 기록을 찾을 수 없습니다: " + userEmail)
+        );
+
+        studyRecord.incrementFinishedConversationCount();
+
+        ChatMemoryLocalStorage.removeChatMemory(conversationId);
     }
 }
