@@ -76,10 +76,20 @@ export function LearningEnhanced({ onPointsEarned }: LearningEnhancedProps) {
   const [activeMode, setActiveMode] = useState<'topics' | 'test' | 'chatbot'>('topics');
 
   if (activeMode === 'test') {
+    const reviewTestSubject = localStorage.getItem('reviewTestSubject') || 'SELF_INTRODUCTION';
+    const reviewTestLevel = localStorage.getItem('reviewTestLevel') || selectedLevel.toUpperCase();
+    
     return (
       <LearningTest 
-        onBack={() => setActiveMode('topics')}
+        onBack={() => {
+          localStorage.removeItem('reviewTestSubject');
+          localStorage.removeItem('reviewTestLevel');
+          setActiveMode('topics');
+        }}
         onPointsEarned={onPointsEarned}
+        subject={reviewTestSubject}
+        studyLevel={reviewTestLevel}
+        questionCount={5}
       />
     );
   }
@@ -100,6 +110,21 @@ export function LearningEnhanced({ onPointsEarned }: LearningEnhancedProps) {
         level={selectedLevel}
         onBack={() => setSelectedTopic(null)}
         onPointsEarned={onPointsEarned}
+        onStartReviewTest={(topic, level) => {
+          setSelectedTopic(null);
+          setActiveMode('test');
+          // 주제를 영어로 변환하는 함수 필요
+          const subjectMap: { [key: string]: string } = {
+            'selfIntroduction': 'SELF_INTRODUCTION',
+            'family': 'FAMILY',
+            'school': 'SCHOOL',
+            'food': 'FOOD',
+            'weather': 'WEATHER'
+          };
+          // 복습 시험을 위한 상태 저장 (실제로는 context나 state management 사용)
+          localStorage.setItem('reviewTestSubject', subjectMap[topic] || 'SELF_INTRODUCTION');
+          localStorage.setItem('reviewTestLevel', level.toUpperCase());
+        }}
       />
     );
   }

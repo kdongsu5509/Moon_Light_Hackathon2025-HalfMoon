@@ -4,11 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
-import { ArrowLeft, Clock, CheckCircle, XCircle, Trophy } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle, XCircle, Trophy, Loader2 } from 'lucide-react';
+import { reviewTestService, ReviewTestQuestion, ReviewTestResult, ReviewTestAnswer } from '../services/reviewTestService';
 
 interface LearningTestProps {
   onBack: () => void;
   onPointsEarned: (points: number) => void;
+  subject?: string;
+  studyLevel?: string;
+  questionCount?: number;
 }
 
 interface Question {
@@ -67,23 +71,67 @@ const testQuestions: Question[] = [
   }
 ];
 
-export function LearningTest({ onBack, onPointsEarned }: LearningTestProps) {
+export function LearningTest({ onBack, onPointsEarned, subject = 'SELF_INTRODUCTION', studyLevel = 'BEGINNER', questionCount = 5 }: LearningTestProps) {
+  const [questions, setQuestions] = useState<ReviewTestQuestion[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | number | null>(null);
   const [userAnswer, setUserAnswer] = useState('');
-  const [answers, setAnswers] = useState<(string | number)[]>([]);
+  const [answers, setAnswers] = useState<ReviewTestAnswer[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600); // 10분
   const [isFinished, setIsFinished] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [testId, setTestId] = useState<string>('');
+  const [testResult, setTestResult] = useState<ReviewTestResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // 퀴즈 로드
+  useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await reviewTestService.generateReviewTest({
+          subject,
+          studyLevel,
+          questionCount
+        });
+        
+        setQuestions(response.questions);
+        setTestId(response.testId);
+        setTimeLeft(response.timeLimit * 60); // 분을 초로 변환
+      } catch (err) {
+        console.error('퀴즈 로드 실패:', err);
+        setError(err instanceof Error ? err.message : '퀴즈를 불러오는데 실패했습니다.');
+        // 에러 발생 시 기본 퀴즈 사용
+        setQuestions(testQuestions.map((q, index) => ({
+          id: `q${index + 1}`,
+          type: q.type,
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.type === 'multiple' ? q.options![q.correct as number] : q.correct as string,
+          explanation: q.explanation,
+          image: q.image || '📝',
+          originalSentence: q.question
+        })));
+        setTestId('fallback-test');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadQuestions();
+  }, [subject, studyLevel, questionCount]);
 
   useEffect(() => {
-    if (timeLeft > 0 && !isFinished) {
+    if (timeLeft > 0 && !isFinished && !isLoading) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0) {
       handleFinishTest();
     }
-  }, [timeLeft, isFinished]);
+  }, [timeLeft, isFinished, isLoading]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -96,11 +144,21 @@ export function LearningTest({ onBack, onPointsEarned }: LearningTestProps) {
   };
 
   const handleNext = () => {
-    const answer = testQuestions[currentQuestion].type === 'fill' ? userAnswer : selectedAnswer;
-    const newAnswers = [...answers, answer as string | number];
+    const currentQ = questions[currentQuestion];
+    if (!currentQ) return;
+
+    const answerValue = currentQ.type === 'fill' ? userAnswer : 
+                       currentQ.type === 'multiple' ? (selectedAnswer !== null ? currentQ.options![selectedAnswer as number] : '') : '';
+    
+    const newAnswer: ReviewTestAnswer = {
+      questionId: currentQ.id,
+      userAnswer: answerValue
+    };
+    
+    const newAnswers = [...answers, newAnswer];
     setAnswers(newAnswers);
 
-    if (currentQuestion < testQuestions.length - 1) {
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(null);
       setUserAnswer('');
@@ -109,43 +167,66 @@ export function LearningTest({ onBack, onPointsEarned }: LearningTestProps) {
     }
   };
 
-  const handleFinishTest = (finalAnswers?: (string | number)[]) => {
+  const handleFinishTest = async (finalAnswers?: ReviewTestAnswer[]) => {
     setIsFinished(true);
     const answersToCheck = finalAnswers || answers;
     
-    // 점수 계산
-    let correct = 0;
-    testQuestions.forEach((q, index) => {
-      const userAns = answersToCheck[index];
-      if (q.type === 'fill') {
-        if (typeof userAns === 'string' && userAns.includes(q.correct as string)) {
+    try {
+      // 서버에 답안 제출
+      const result = await reviewTestService.submitReviewTest({
+        testId,
+        answers: answersToCheck
+      });
+      
+      setTestResult(result);
+      onPointsEarned(result.earnedPoints);
+      setShowResult(true);
+    } catch (err) {
+      console.error('시험 제출 실패:', err);
+      // 서버 제출 실패 시 로컬에서 점수 계산
+      let correct = 0;
+      questions.forEach((q, index) => {
+        const userAns = answersToCheck[index]?.userAnswer;
+        if (userAns && userAns.toLowerCase().includes(q.correctAnswer.toLowerCase())) {
           correct++;
         }
-      } else {
-        if (userAns === q.correct) {
-          correct++;
-        }
-      }
-    });
+      });
 
-    const score = Math.round((correct / testQuestions.length) * 100);
-    const points = Math.round(score * 2); // 점수에 따른 포인트
-    onPointsEarned(points);
-    setShowResult(true);
+      const score = questions.length > 0 ? Math.round((correct / questions.length) * 100) : 0;
+      const points = Math.round(score * 2);
+      
+      setTestResult({
+        testId,
+        totalQuestions: questions.length,
+        correctAnswers: correct,
+        score,
+        grade: score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : 'D',
+        earnedPoints: points,
+        questionResults: questions.map((q, index) => ({
+          questionId: q.id,
+          question: q.question,
+          correctAnswer: q.correctAnswer,
+          userAnswer: answersToCheck[index]?.userAnswer || '',
+          isCorrect: answersToCheck[index]?.userAnswer?.toLowerCase().includes(q.correctAnswer.toLowerCase()) || false,
+          explanation: q.explanation
+        }))
+      });
+      
+      onPointsEarned(points);
+      setShowResult(true);
+    }
   };
 
   const getScore = () => {
+    if (testResult) {
+      return testResult.correctAnswers;
+    }
+    
     let correct = 0;
-    testQuestions.forEach((q, index) => {
-      const userAns = answers[index];
-      if (q.type === 'fill') {
-        if (typeof userAns === 'string' && userAns.includes(q.correct as string)) {
-          correct++;
-        }
-      } else {
-        if (userAns === q.correct) {
-          correct++;
-        }
+    questions.forEach((q, index) => {
+      const userAns = answers[index]?.userAnswer;
+      if (userAns && userAns.toLowerCase().includes(q.correctAnswer.toLowerCase())) {
+        correct++;
       }
     });
     return correct;
@@ -158,9 +239,43 @@ export function LearningTest({ onBack, onPointsEarned }: LearningTestProps) {
     return { grade: 'D', color: 'text-red-600', message: '다시 공부해볼까요?' };
   };
 
-  if (showResult) {
-    const correctAnswers = getScore();
-    const score = Math.round((correctAnswers / testQuestions.length) * 100);
+  // 로딩 중일 때
+  if (isLoading) {
+    return (
+      <div className="web-container mx-auto p-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center space-y-4">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+              <p className="text-lg text-gray-600">복습 시험을 준비하고 있습니다...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 에러가 있을 때
+  if (error && questions.length === 0) {
+    return (
+      <div className="web-container mx-auto p-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="text-center space-y-4">
+            <div className="text-6xl">😞</div>
+            <h2 className="text-2xl text-gray-800">시험을 불러올 수 없습니다</h2>
+            <p className="text-gray-600">{error}</p>
+            <Button onClick={onBack} className="mt-4">
+              돌아가기
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showResult && testResult) {
+    const correctAnswers = testResult.correctAnswers;
+    const score = testResult.score;
     const gradeInfo = getGrade(score);
 
     return (
@@ -194,12 +309,12 @@ export function LearningTest({ onBack, onPointsEarned }: LearningTestProps) {
                 <div className="space-y-2">
                   <div className="text-2xl">❌</div>
                   <div className="text-sm text-gray-600">오답</div>
-                  <div className="text-xl font-bold text-red-600">{testQuestions.length - correctAnswers}</div>
+                  <div className="text-xl font-bold text-red-600">{testResult.totalQuestions - correctAnswers}</div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-2xl">🏆</div>
                   <div className="text-sm text-gray-600">획득 포인트</div>
-                  <div className="text-xl font-bold text-blue-600">{Math.round(score * 2)}</div>
+                  <div className="text-xl font-bold text-blue-600">{testResult.earnedPoints}</div>
                 </div>
               </div>
 
@@ -217,36 +332,29 @@ export function LearningTest({ onBack, onPointsEarned }: LearningTestProps) {
               <CardTitle>상세 결과</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {testQuestions.map((q, index) => {
-                const userAns = answers[index];
-                const isCorrect = q.type === 'fill' 
-                  ? typeof userAns === 'string' && userAns.includes(q.correct as string)
-                  : userAns === q.correct;
-
-                return (
-                  <div key={q.id} className="border rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="text-2xl">{q.image}</div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="font-medium">문제 {q.id}</span>
-                          {isCorrect ? (
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                          ) : (
-                            <XCircle className="w-5 h-5 text-red-600" />
-                          )}
-                        </div>
-                        <p className="mb-2">{q.question}</p>
-                        <div className="text-sm text-gray-600">
-                          <div>정답: {q.type === 'multiple' ? q.options![q.correct as number] : q.correct}</div>
-                          <div>내 답: {q.type === 'multiple' ? (q.options![userAns as number] || '선택 안함') : (userAns || '답 안함')}</div>
-                          <div className="mt-2 p-2 bg-blue-50 rounded">{q.explanation}</div>
-                        </div>
+              {testResult.questionResults.map((result, index) => (
+                <div key={result.questionId} className="border rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="text-2xl">📝</div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="font-medium">문제 {index + 1}</span>
+                        {result.isCorrect ? (
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-600" />
+                        )}
+                      </div>
+                      <p className="mb-2">{result.question}</p>
+                      <div className="text-sm text-gray-600">
+                        <div>정답: {result.correctAnswer}</div>
+                        <div>내 답: {result.userAnswer || '답 안함'}</div>
+                        <div className="mt-2 p-2 bg-blue-50 rounded">{result.explanation}</div>
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </CardContent>
           </Card>
         </motion.div>
@@ -254,8 +362,24 @@ export function LearningTest({ onBack, onPointsEarned }: LearningTestProps) {
     );
   }
 
-  const question = testQuestions[currentQuestion];
-  const progress = ((currentQuestion + 1) / testQuestions.length) * 100;
+  const question = questions[currentQuestion];
+  if (!question) {
+    return (
+      <div className="web-container mx-auto p-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="text-center space-y-4">
+            <div className="text-6xl">😞</div>
+            <h2 className="text-2xl text-gray-800">문제를 불러올 수 없습니다</h2>
+            <Button onClick={onBack} className="mt-4">
+              돌아가기
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
     <div className="web-container mx-auto p-6">
@@ -274,7 +398,7 @@ export function LearningTest({ onBack, onPointsEarned }: LearningTestProps) {
               </span>
             </div>
             <Badge variant="outline">
-              {currentQuestion + 1} / {testQuestions.length}
+              {currentQuestion + 1} / {questions.length}
             </Badge>
           </div>
         </div>
@@ -299,7 +423,7 @@ export function LearningTest({ onBack, onPointsEarned }: LearningTestProps) {
             <CardHeader>
               <div className="text-center space-y-4">
                 <div className="text-4xl">{question.image}</div>
-                <CardTitle className="text-xl">문제 {question.id}</CardTitle>
+                <CardTitle className="text-xl">문제 {currentQuestion + 1}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -347,7 +471,7 @@ export function LearningTest({ onBack, onPointsEarned }: LearningTestProps) {
                   }
                   className="px-8"
                 >
-                  {currentQuestion === testQuestions.length - 1 ? '완료' : '다음'}
+                  {currentQuestion === questions.length - 1 ? '완료' : '다음'}
                 </Button>
               </div>
             </CardContent>

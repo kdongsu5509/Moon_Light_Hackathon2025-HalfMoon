@@ -1,0 +1,12 @@
+package com.halfmoon.halfmoon.study.infra;
+
+import com.halfmoon.halfmoon.study.domain.ReviewTestQuestion;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ReviewTestQuestionJpaRepository extends JpaRepository<ReviewTestQuestion, UUID> {
+    List<ReviewTestQuestion> findByReviewTestSessionId(UUID sessionId);
+    Optional<ReviewTestQuestion> findByQuestionId(String questionId);
+}
