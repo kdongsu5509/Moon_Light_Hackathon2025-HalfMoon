@@ -222,6 +222,7 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
     setMessages([initialMessage]);
   };
 
+  // 메시지 전송 함수
   const sendMessage = async () => {
     if (!inputMessage.trim() || !selectedScenario) return;
 
