@@ -588,8 +588,8 @@ public class PronunciationService {
 ```
 
 # AWS 배포 환경 설정 및 구성
-
-//TODO  : 관련 이미지 생성해서 붙여넣기
+### 구성
+![AWS 배포 환경 설정 및 구성](https://github.com/user-attachments/assets/1e7e7dcc-632e-4e4a-af24-87de02fd9748)
 
 ## Github Action를 통한 CI/CD
 
