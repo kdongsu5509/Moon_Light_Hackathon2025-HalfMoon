@@ -137,9 +137,7 @@ docker run -d -p 8080:8080 --name banwol-backend banwol-backend:latest # Docker 
 docker logs -f banwol-backend # 로그을 통해 정상 실행 확인
 ```
 
-- **로컬 환경에서 실행하기 →**
-
-[사용자 컴퓨터에서 실행하기](Backend\docs\local-run.md)
+- **로컬 환경에서 실행하기** : [사용자 컴퓨터에서 실행하기](https://github.com/kdongsu5509/Moon_Light_Hackathon2025-HalfMoon/blob/main/Backend/docs/local-run.md)
 
 # 사용한 AI 모델 및 구현 방식
 
