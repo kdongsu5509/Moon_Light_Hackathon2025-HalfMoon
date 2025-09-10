@@ -57,6 +57,7 @@ const scenarios = [
   }
 ];
 
+// 기존 로컬 봇 응답 (API 실패 시 fallback으로 사용)
 const botResponses = {
   greeting: {
     initial: "안녕하세요! 저는 AI 한국어 선생님이에요. 처음 만나서 반가워요! 자기소개를 해주세요.",
@@ -120,19 +121,97 @@ const botResponses = {
 
 export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps) {
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
+  const [isApiEnabled, setIsApiEnabled] = useState(true); // API 사용 여부를 제어하는 상태
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const startScenario = (scenarioId: string) => {
+  // API 헤더 설정
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('jwtToken') || '';
+    return {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: '*/*',
+    };
+  };
+
+  // 대화 시작 API 호출
+  const startConversation = async (subject: string) => {
+    const url = `/api/chat/start?subject=${encodeURIComponent(subject)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (data.code !== 200) throw new Error('대화 시작 실패');
+    return data.data.conversationId;
+  };
+
+  // 대화 이어가기 API 호출
+  const continueConversation = async (talkId: string, userInput: string) => {
+    const response = await fetch('/api/chat/continue', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ talkId, userInput }),
+    });
+    const data = await response.json();
+    if (data.code !== 200) throw new Error('대화 이어가기 실패');
+    return data.data;
+  };
+
+  // TTS API 호출
+  const getSpeechFromTTS = async (text: string) => {
+    const response = await fetch('/api/tts', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ text }),
+    });
+    if (!response.ok) throw new Error('TTS 실패');
+    return await response.blob();
+  };
+
+  // 시나리오 시작 함수
+  const startScenario = async (scenarioId: string) => {
     setSelectedScenario(scenarioId);
     setMessageCount(0);
+    setConversationId(null);
+
+    // API를 사용하는 경우
+    if (isApiEnabled) {
+      try {
+        const convId = await startConversation(scenarioId.toUpperCase());
+        setConversationId(convId);
+        
+        // API에서 초기 메시지를 받지 못하는 경우 로컬 메시지 사용
+        const initialMessage: Message = {
+          id: Date.now().toString(),
+          content: botResponses[scenarioId as keyof typeof botResponses].initial,
+          isBot: true,
+          timestamp: new Date(),
+          scenario: scenarioId
+        };
+        setMessages([initialMessage]);
+      } catch (error) {
+        console.warn('API 대화 시작 실패, 로컬 모드로 전환:', error);
+        setIsApiEnabled(false);
+        startLocalScenario(scenarioId);
+      }
+    } else {
+      startLocalScenario(scenarioId);
+    }
+  };
+
+  // 로컬 시나리오 시작
+  const startLocalScenario = (scenarioId: string) => {
     const initialMessage: Message = {
       id: Date.now().toString(),
       content: botResponses[scenarioId as keyof typeof botResponses].initial,
@@ -143,7 +222,8 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
     setMessages([initialMessage]);
   };
 
-  const sendMessage = () => {
+  // 메시지 전송 함수
+  const sendMessage = async () => {
     if (!inputMessage.trim() || !selectedScenario) return;
 
     // 사용자 메시지 추가
@@ -160,19 +240,44 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
     // 포인트 지급 (메시지당 2포인트)
     onPointsEarned(2);
 
-    // 봇 응답 생성
-    setTimeout(() => {
-      const botResponse = generateBotResponse(inputMessage, selectedScenario);
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: botResponse,
-        isBot: true,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
-    }, 1000);
-
+    const currentInput = inputMessage;
     setInputMessage('');
+
+    // API를 사용하는 경우
+    if (isApiEnabled && conversationId) {
+      try {
+        const aiResponseText = await continueConversation(conversationId, currentInput);
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: aiResponseText,
+          isBot: true,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+
+        // TTS 시도
+        try {
+          const audioBlob = await getSpeechFromTTS(aiResponseText);
+          const url = URL.createObjectURL(audioBlob);
+          if (audioRef.current) {
+            audioRef.current.src = url;
+            audioRef.current.play().catch(console.error);
+          }
+        } catch (ttsError) {
+          console.warn('TTS 실패:', ttsError);
+        }
+
+      } catch (error) {
+        console.warn('API 응답 실패, 로컬 응답 사용:', error);
+        generateLocalBotResponse(currentInput, selectedScenario);
+      }
+    } else {
+      // 로컬 응답 생성
+      setTimeout(() => {
+        generateLocalBotResponse(currentInput, selectedScenario);
+      }, 1000);
+    }
 
     // 10개 메시지마다 보너스 포인트
     if (messageCount + 1 >= 10) {
@@ -180,6 +285,19 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
     }
   };
 
+  // 로컬 봇 응답 생성
+  const generateLocalBotResponse = (userInput: string, scenario: string) => {
+    const botResponse = generateBotResponse(userInput, scenario);
+    const botMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      content: botResponse,
+      isBot: true,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, botMessage]);
+  };
+
+  // 봇 응답 생성 로직 (기존 코드)
   const generateBotResponse = (userInput: string, scenario: string): string => {
     const scenarioResponses = botResponses[scenario as keyof typeof botResponses].responses;
     const lowerInput = userInput.toLowerCase();
@@ -195,6 +313,7 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
     return scenarioResponses.default;
   };
 
+  // 음성 인식 시작
   const startVoiceRecognition = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       alert('음성 인식이 지원되지 않는 브라우저입니다.');
@@ -228,6 +347,7 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
     recognition.start();
   };
 
+  // 시나리오 선택 화면
   if (!selectedScenario) {
     return (
       <div className="web-container mx-auto p-6 space-y-6">
@@ -283,6 +403,7 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
                   <li>• 자연스러운 대화를 나누어보세요</li>
                   <li>• 음성 입력도 가능해요</li>
                   <li>• 메시지를 보낼 때마다 포인트를 받아요</li>
+                  <li>• AI 응답에는 음성도 제공됩니다</li>
                 </ul>
               </div>
             </div>
@@ -294,6 +415,7 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
 
   const currentScenario = scenarios.find(s => s.id === selectedScenario)!;
 
+  // 대화 화면
   return (
     <div className="web-container mx-auto p-6">
       <div className="max-w-4xl mx-auto">
@@ -307,9 +429,14 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
             <Badge className={currentScenario.color}>
               {currentScenario.icon} {currentScenario.name}
             </Badge>
+            {!isApiEnabled && (
+              <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                로컬 모드
+              </Badge>
+            )}
           </div>
           <div className="text-sm text-gray-500">
-            메시지 수: {messageCount} • 획득 포인트: {messageCount * 2}
+            메시지 수: {messageCount} • 획득 포인트: {messageCount * 2 + (Math.floor(messageCount / 10) * 20)}
           </div>
         </div>
 
@@ -379,6 +506,9 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
             </div>
           </div>
         </Card>
+
+        {/* Hidden Audio Element for TTS */}
+        <audio ref={audioRef} style={{ display: 'none' }} />
       </div>
     </div>
   );
