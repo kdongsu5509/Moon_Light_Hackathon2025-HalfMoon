@@ -17,12 +17,19 @@ import com.halfmoon.halfmoon.study.infra.ReviewTestAnswerJpaRepository;
 import com.halfmoon.halfmoon.study.infra.ReviewTestQuestionJpaRepository;
 import com.halfmoon.halfmoon.study.infra.ReviewTestSessionJpaRepository;
 import com.halfmoon.halfmoon.study.infra.SentenceJpaRepository;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.*;
 
 @Slf4j
 @Service
@@ -43,13 +50,13 @@ public class ReviewTestService {
         );
 
         // 2. 해당 사용자의 주제와 난이도의 학습 내용 조회
-        Subject subject = Subject.valueOf(request.subject());
-        StudyLevel studyLevel = StudyLevel.valueOf(request.studyLevel());
-        
+        Subject subject = request.subject();
+        StudyLevel studyLevel = request.studyLevel();
+
         // 2단계: 사용자별 StudyContent 조회
         List<Sentence> learnedSentences = sentenceJpaRepository.findByStudyContentSubjectAndStudyContentStudyLevelAndStudyContentUser(
                 subject, studyLevel, user);
-        
+
         if (learnedSentences.isEmpty()) {
             throw new IllegalArgumentException("해당 주제의 학습 내용을 찾을 수 없습니다. 먼저 해당 주제를 학습해주세요.");
         }
@@ -59,7 +66,7 @@ public class ReviewTestService {
         log.info("사용자: {}, 주제: {}, 난이도: {}", userEmail, subject, studyLevel);
         log.info("조회된 문장 수: {}", learnedSentences.size());
         log.info("조회된 문장들: {}", learnedSentences.stream().map(Sentence::getSentence).toList());
-        
+
         // 문장 조회 시점에서도 랜덤화 적용
         Collections.shuffle(learnedSentences, new Random(System.currentTimeMillis()));
 
@@ -71,18 +78,18 @@ public class ReviewTestService {
 
         // 5. 테스트 ID 생성 (UUID)
         String testId = UUID.randomUUID().toString();
-        
+
         // 6. 복습 시험 세션 생성 및 저장
         ReviewTestSession session = ReviewTestSession.create(
-                testId, 
-                questions.size(), 
+                testId,
+                questions.size(),
                 10, // 10분 제한
-                subject, 
-                studyLevel, 
+                subject,
+                studyLevel,
                 user
         );
         ReviewTestSession savedSession = reviewTestSessionJpaRepository.save(session);
-        
+
         // 7. 문제들을 데이터베이스에 저장
         List<ReviewTestQuestion> savedQuestions = new ArrayList<>();
         for (ReviewTestQuestionDto questionDto : questions) {
@@ -136,8 +143,10 @@ public class ReviewTestService {
 
             // 정답과 비교하여 채점
             boolean isCorrect = evaluateAnswer(question, answer.userAnswer());
-            if (isCorrect) correctCount++;
-            
+            if (isCorrect) {
+                correctCount++;
+            }
+
             // 답안 저장
             ReviewTestAnswer reviewTestAnswer = ReviewTestAnswer.create(
                     answer.questionId(),
@@ -146,7 +155,7 @@ public class ReviewTestService {
                     session
             );
             savedAnswers.add(reviewTestAnswerJpaRepository.save(reviewTestAnswer));
-            
+
             // 결과 생성
             questionResults.add(new ReviewTestResultDto.QuestionResult(
                     answer.questionId(),
@@ -168,7 +177,7 @@ public class ReviewTestService {
         String grade = calculateGrade(score);
         int earnedPoints = calculatePoints(score, totalQuestions);
 
-        log.info("복습 시험 완료 - 사용자: {}, 점수: {}/{} ({}%), 등급: {}", 
+        log.info("복습 시험 완료 - 사용자: {}, 점수: {}/{} ({}%), 등급: {}",
                 userEmail, correctCount, totalQuestions, score, grade);
 
         return new ReviewTestResultDto(
@@ -184,46 +193,46 @@ public class ReviewTestService {
 
     private List<ReviewTestQuestionDto> generateQuestions(List<Sentence> sentences, int questionCount) {
         List<ReviewTestQuestionDto> questions = new ArrayList<>();
-        
+
         // 더 강력한 랜덤 시드 생성 (UUID + 시간 + 나노초 + 문장 내용)
-        long uniqueSeed = UUID.randomUUID().toString().hashCode() + 
-                         System.currentTimeMillis() + 
-                         System.nanoTime() + 
-                         sentences.hashCode() +
-                         sentences.stream().mapToInt(s -> s.getSentence().hashCode()).sum();
+        long uniqueSeed = UUID.randomUUID().toString().hashCode() +
+                System.currentTimeMillis() +
+                System.nanoTime() +
+                sentences.hashCode() +
+                sentences.stream().mapToInt(s -> s.getSentence().hashCode()).sum();
         Random random = new Random(uniqueSeed);
-        
+
         // 문제 수를 학습한 문장 수로 제한
         int actualQuestionCount = Math.min(questionCount, sentences.size());
-        
+
         // 문장을 랜덤하게 섞기
         List<Sentence> shuffledSentences = new ArrayList<>(sentences);
         Collections.shuffle(shuffledSentences, random);
-        
+
         // 랜덤하게 문장 선택 (중복 없이)
         List<Sentence> selectedSentences = new ArrayList<>();
         Set<Integer> selectedIndices = new HashSet<>();
-        
+
         while (selectedSentences.size() < actualQuestionCount && selectedIndices.size() < shuffledSentences.size()) {
             int randomIndex = random.nextInt(shuffledSentences.size());
             if (selectedIndices.add(randomIndex)) {
                 selectedSentences.add(shuffledSentences.get(randomIndex));
             }
         }
-        
+
         // 선택된 문장들을 다시 섞기 (추가 랜덤화)
         Collections.shuffle(selectedSentences, random);
-        
+
         log.info("=== 복습 시험 문제 생성 ===");
-        log.info("원본 문장 수: {}, 요청 문제 수: {}, 실제 선택 수: {}", 
+        log.info("원본 문장 수: {}, 요청 문제 수: {}, 실제 선택 수: {}",
                 sentences.size(), questionCount, selectedSentences.size());
         log.info("원본 문장들: {}", sentences.stream().map(Sentence::getSentence).toList());
         log.info("선택된 문장들: {}", selectedSentences.stream().map(Sentence::getSentence).toList());
         log.info("랜덤 시드: {}", uniqueSeed);
-        
+
         for (int i = 0; i < selectedSentences.size(); i++) {
             Sentence sentence = selectedSentences.get(i);
-            
+
             // 문제 유형을 랜덤하게 선택 (객관식 60%, 빈칸 채우기 40%)
             // 문장 내용과 인덱스를 고려한 더 나은 랜덤화
             double randomValue = random.nextDouble();
@@ -231,15 +240,15 @@ public class ReviewTestService {
             double sentenceHash = Math.abs(sentence.getSentence().hashCode() % 100) / 100.0;
             double combinedRandom = (randomValue + sentenceHash) % 1.0;
             String questionType = combinedRandom < 0.6 ? "multiple" : "fill";
-            
+
             // 고유한 문제 ID 생성 (UUID + 랜덤값 + 인덱스)
-            String questionId = "q_" + UUID.randomUUID().toString().substring(0, 8) + "_" + 
-                               random.nextInt(10000) + "_" + (i + 1);
-            
+            String questionId = "q_" + UUID.randomUUID().toString().substring(0, 8) + "_" +
+                    random.nextInt(10000) + "_" + (i + 1);
+
             ReviewTestQuestionDto question = createQuestion(sentence, questionType, questionId, random);
             questions.add(question);
         }
-        
+
         return questions;
     }
 
@@ -254,7 +263,7 @@ public class ReviewTestService {
     private ReviewTestQuestionDto createMultipleChoiceQuestion(String questionId, Sentence sentence, Random random) {
         String originalSentence = sentence.getSentence();
         String meaning = sentence.getMeaning();
-        
+
         // 다양한 문제 유형 생성
         String[] questionTypes = {
                 "다음 문장의 의미는 무엇인가요?",
@@ -273,17 +282,17 @@ public class ReviewTestService {
                 "아래 문장의 의미로 가장 적절한 것은?",
                 "이 문장이 나타내는 것은?"
         };
-        
+
         String questionTemplate = questionTypes[random.nextInt(questionTypes.length)];
         String question = String.format("%s\n\"%s\"", questionTemplate, originalSentence);
-        
+
         // 선택지 생성 (정답 + 오답 3개)
         List<String> options = generateMultipleChoiceOptions(meaning, random);
         String correctAnswer = meaning;
-        
-        String explanation = String.format("정답은 \"%s\"입니다. 이 문장은 %s를 의미합니다.", 
+
+        String explanation = String.format("정답은 \"%s\"입니다. 이 문장은 %s를 의미합니다.",
                 meaning, originalSentence);
-        
+
         return new ReviewTestQuestionDto(
                 questionId,
                 "multiple",
@@ -298,14 +307,14 @@ public class ReviewTestService {
 
     private ReviewTestQuestionDto createFillInTheBlankQuestion(String questionId, Sentence sentence, Random random) {
         String originalSentence = sentence.getSentence();
-        
+
         // 문장에서 핵심 단어를 빈칸으로 만들기
         String[] words = originalSentence.split(" ");
         if (words.length < 2) {
             // 단어가 너무 적으면 객관식으로 변경
             return createMultipleChoiceQuestion(questionId, sentence, random);
         }
-        
+
         // 랜덤하게 빈칸으로 만들 단어 선택 (첫 번째나 마지막 단어는 피하기)
         int blankIndex;
         if (words.length <= 2) {
@@ -314,7 +323,7 @@ public class ReviewTestService {
             blankIndex = random.nextInt(words.length - 2) + 1; // 중간 단어들 중에서 선택
         }
         String correctWord = words[blankIndex];
-        
+
         // 빈칸이 있는 문장 생성
         StringBuilder questionBuilder = new StringBuilder();
         for (int i = 0; i < words.length; i++) {
@@ -327,7 +336,7 @@ public class ReviewTestService {
                 questionBuilder.append(" ");
             }
         }
-        
+
         // 다양한 문제 템플릿
         String[] questionTemplates = {
                 "빈칸에 들어갈 말은?",
@@ -346,12 +355,12 @@ public class ReviewTestService {
                 "빈칸에 들어갈 가장 적절한 말은?",
                 "다음 문장의 빈칸을 완성하세요:"
         };
-        
+
         String questionTemplate = questionTemplates[random.nextInt(questionTemplates.length)];
         String question = String.format("%s\n\"%s\"", questionTemplate, questionBuilder.toString());
-        String explanation = String.format("정답은 \"%s\"입니다. 원래 문장: \"%s\"", 
+        String explanation = String.format("정답은 \"%s\"입니다. 원래 문장: \"%s\"",
                 correctWord, originalSentence);
-        
+
         return new ReviewTestQuestionDto(
                 questionId,
                 "fill",
@@ -367,11 +376,11 @@ public class ReviewTestService {
     private List<String> generateMultipleChoiceOptions(String correctAnswer, Random random) {
         List<String> options = new ArrayList<>();
         options.add(correctAnswer);
-        
+
         // 더 다양하고 현실적인 오답 선택지들
         String[] wrongAnswers = {
                 "안녕하세요",
-                "감사합니다", 
+                "감사합니다",
                 "죄송합니다",
                 "네, 맞습니다",
                 "아니요, 틀렸습니다",
@@ -401,19 +410,21 @@ public class ReviewTestService {
                 "놀랍습니다",
                 "재미있습니다"
         };
-        
+
         List<String> wrongOptions = new ArrayList<>(Arrays.asList(wrongAnswers));
         Collections.shuffle(wrongOptions, random);
-        
+
         // 오답 3개 선택 (중복 제거)
         Set<String> selectedWrongAnswers = new HashSet<>();
         for (String wrongAnswer : wrongOptions) {
-            if (selectedWrongAnswers.size() >= 3) break;
+            if (selectedWrongAnswers.size() >= 3) {
+                break;
+            }
             if (!wrongAnswer.equals(correctAnswer) && selectedWrongAnswers.add(wrongAnswer)) {
                 options.add(wrongAnswer);
             }
         }
-        
+
         // 선택지가 4개 미만이면 추가 오답 생성
         while (options.size() < 4) {
             String additionalWrong = "오답 " + (random.nextInt(1000) + 1);
@@ -423,10 +434,10 @@ public class ReviewTestService {
                 break;
             }
         }
-        
+
         // 선택지 섞기 (정답 위치도 랜덤하게)
         Collections.shuffle(options, random);
-        
+
         return options;
     }
 
@@ -434,24 +445,30 @@ public class ReviewTestService {
         if (userAnswer == null || userAnswer.trim().isEmpty()) {
             return false;
         }
-        
+
         String correctAnswer = question.getCorrectAnswer();
         String trimmedUserAnswer = userAnswer.trim();
         String trimmedCorrectAnswer = correctAnswer.trim();
-        
+
         // 대소문자 구분 없이 비교
         boolean isCorrect = trimmedUserAnswer.equalsIgnoreCase(trimmedCorrectAnswer);
-        
-        log.debug("답안 채점 - 문제: {}, 사용자 답안: '{}', 정답: '{}', 결과: {}", 
+
+        log.debug("답안 채점 - 문제: {}, 사용자 답안: '{}', 정답: '{}', 결과: {}",
                 question.getQuestionId(), trimmedUserAnswer, trimmedCorrectAnswer, isCorrect);
-        
+
         return isCorrect;
     }
 
     private String calculateGrade(int score) {
-        if (score >= 90) return "A";
-        if (score >= 80) return "B";
-        if (score >= 70) return "C";
+        if (score >= 90) {
+            return "A";
+        }
+        if (score >= 80) {
+            return "B";
+        }
+        if (score >= 70) {
+            return "C";
+        }
         return "D";
     }
 
