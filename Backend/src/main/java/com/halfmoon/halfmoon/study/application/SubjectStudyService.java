@@ -147,8 +147,7 @@ public class SubjectStudyService {
         List<SubjectCompletionRateDto> completionRateDtoList = allSubjects.stream()
                 .map(subject -> {
                     // 해당 주제에 대한 모든 문장을 조회합니다.
-                    List<Sentence> sentences = sentenceJpaRepository.findByStudyContentSubjectAndStudyContentStudyLevel(
-                            subject, studyLevel);
+                    List<Sentence> sentences = sentenceJpaRepository.findBySubjectAndStudyLevel(subject, studyLevel);
 
                     // 사용자가 해당 주제를 학습했는지 확인
                     boolean userHasStudiedSubject = myStudyContents.stream()

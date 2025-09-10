@@ -54,8 +54,8 @@ public class ReviewTestService {
         StudyLevel studyLevel = request.studyLevel();
 
         // 2단계: 사용자별 StudyContent 조회
-        List<Sentence> learnedSentences = sentenceJpaRepository.findByStudyContentSubjectAndStudyContentStudyLevelAndStudyContentUser(
-                subject, studyLevel, user);
+        List<Sentence> learnedSentences = sentenceJpaRepository.findBySubjectAndStudyLevelAndUser(subject, studyLevel,
+                user);
 
         if (learnedSentences.isEmpty()) {
             throw new IllegalArgumentException("해당 주제의 학습 내용을 찾을 수 없습니다. 먼저 해당 주제를 학습해주세요.");
