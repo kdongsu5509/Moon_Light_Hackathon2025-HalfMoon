@@ -1,7 +1,7 @@
 # Backend
 
 - 이 디렉토리는 `반월`의 서버 코드입니다.
-- 이 문서와 하위 문서에서는 서버 코드에 관련된 설명, 실행 방법, 사용한 AI에 대한 설명, 배포 환경 등에 대해 다룹니다.
+- 이 문서와 하위 문서에서는 서버 코드에 관련된 설명, 실행 방법, 사용한 AI에 대한 설명, 데이터베이스 구조, 배포 환경 등에 대해 다룹니다.
 
 ---
 
@@ -587,9 +587,17 @@ public class PronunciationService {
 }
 ```
 
+# 데이터베이스 구조
+
+### ERD 참고
+
+![반월 ERD](./docs/image/dberd.png)
+
 # AWS 배포 환경 설정 및 구성
+
 ### 구성
-![AWS 배포 환경 설정 및 구성](https://github.com/user-attachments/assets/1e7e7dcc-632e-4e4a-af24-87de02fd9748)
+
+![AWS 배포 환경 설정 및 구성](./docs/image/serverArchitecture.png)
 
 ## Github Action를 통한 CI/CD
 
