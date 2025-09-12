@@ -37,21 +37,24 @@ AI를 활용한 발음 교정, 대화 연습, 맞춤형 학습 자료 제공을 
  상세 내용은 `/Backend` 와 `/Frontend` 의 `README.md`를 참고해주세요.
 
 ### ⚙️ 백엔드
-- **개발 언어**: Java 21
-- **IDE**: IntelliJ IDEA, Cursor
-- **빌드 도구**: Gradle 8.5
-- **프레임워크**: Spring Boot 3.5.5
-- **데이터베이스**: H2 Database (개발용 인메모리)
+![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white) 
+![IntelliJ IDEA](https://img.shields.io/badge/IntelliJIDEA-000000.svg?style=for-the-badge&logo=intellij-idea&logoColor=white)
+![Visual Studio Code](https://img.shields.io/badge/Visual%20Studio%20Code-0078d7.svg?style=for-the-badge&logo=visual-studio-code&logoColor=white)
+
+<img src="https://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">
+<img src="https://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
+<img src="https://img.shields.io/badge/H2%20Database-09476B?style=for-the-badge&logo=h2&logoColor=white">
 
 ### 🎨 프론트엔드
-- **개발 도구**: Visual Studio Code
-- **UI 디자인**: Figma
-- **프로토타이핑**: Figma 활용한 화면 설계 
+![Visual Studio Code](https://img.shields.io/badge/Visual%20Studio%20Code-0078d7.svg?style=for-the-badge&logo=visual-studio-code&logoColor=white)
+<img src="https://img.shields.io/badge/figma-%23F24E1E.svg?style=for-the-badge&logo=figma&logoColor=white">
 
-### 📚 공통
-- Git & GitHub  
-- Notion (프로젝트 관리)  
-- Swagger & Notion (API 문서화)  
+
+### 📚 공통 
+![Git](https://img.shields.io/badge/Git-F05032.svg?&style=for-the-badge&logo=Git&logoColor=white)
+<img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white">
+![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)
+![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
 
 ### 🚀 배포 및 운영 환경
 - **AI 통합**: Spring AI Framework, Chat Memory, Structured Output  
