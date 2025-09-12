@@ -60,7 +60,7 @@ AI를 활용한 발음 교정, 대화 연습, 맞춤형 학습 자료 제공을 
 
 - **AI 통합**: Spring AI Framework, Chat Memory, Structured Output  
 - **보안/인증**: Spring Security, JWT 기반 인증  
-- **DB 설계**: H2 DB, Spring Data JPA, QueryDSL  
+- **DB**: H2 DB, Spring Data JPA, QueryDSL  
 - **배포 환경**: AWS EC2 · Docker · GitHub Actions · Amazon ECR
 
 ### 🤝 협업 방식
