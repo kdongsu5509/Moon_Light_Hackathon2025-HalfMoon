@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8080/api", // Swagger 문서 base URL
+  baseURL: "http://3.36.107.16:80/api", // Swagger 문서 base URL
   withCredentials: true, // 필요 시 쿠키/세션 포함
 });
 
