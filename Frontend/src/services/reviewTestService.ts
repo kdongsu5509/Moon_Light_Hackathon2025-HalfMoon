@@ -1,5 +1,5 @@
 // API 호출을 위한 서비스
-const API_BASE_URL = 'http://localhost:8080/api/study/review-test';
+const API_BASE_URL = 'http://3.36.107.16:80/api/study/review-test';
 
 export interface ReviewTestRequest {
   subject: string;
@@ -56,7 +56,7 @@ export interface ReviewTestResult {
 
 // 토큰을 가져오는 헬퍼 함수 (실제 구현에서는 적절한 방법으로 토큰 관리)
 const getAuthToken = (): string | null => {
-  return localStorage.getItem('authToken');
+  return localStorage.getItem('accessToken');
 };
 
 // API 호출 헬퍼 함수

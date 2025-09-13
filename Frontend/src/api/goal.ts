@@ -20,8 +20,12 @@ export const getMonthlyGoal = async (): Promise<GoalResponse | null> => {
   } catch (error: any) {
     if (error.response?.status === 401) {
       console.error("인증 오류: JWT 토큰이 유효하지 않음");
+    } else if (error.response?.status === 400) {
+      console.warn("현재 달 목표가 설정되지 않음 (400 Bad Request)");
+      return null; // 목표가 없음을 null로 반환
     } else if (error.response?.status === 404) {
-      console.warn("현재 달 목표가 설정되지 않음 (goalPoints=null)");
+      console.warn("현재 달 목표가 설정되지 않음 (404 Not Found)");
+      return null; // 목표가 없음을 null로 반환
     } else if (error.response?.status === 500) {
       console.error("서버 내부 오류: 월 목표 조회 실패");
     } else {

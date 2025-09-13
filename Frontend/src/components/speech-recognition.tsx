@@ -10,21 +10,20 @@ interface SpeechRecognitionProps {
   onAttempt: () => void;
 }
 
-// 백엔드 명세에 맞는 API 호출 함수
-async function continueVoiceConversation(conversationId: string, audioBytes: number[], token: string) {
-  const response = await fetch('/api/chat/continue/voice', {
+// 발음 평가 API 호출 함수
+async function evaluatePronunciation(audioBlob: Blob, token: string) {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'audio.wav');
+  
+  const response = await fetch('http://3.36.107.16:80/api/pron/evaluate', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({
-      conversationId,
-      audioData: audioBytes,
-    }),
+    body: formData,
   });
   const data = await response.json();
-  return data.data; // AI 텍스트 응답
+  return data.data; // 발음 평가 점수 (1-10)
 }
 
 export function SpeechRecognition({ conversationId, onSuccess, onAttempt }: SpeechRecognitionProps) {
@@ -52,16 +51,15 @@ export function SpeechRecognition({ conversationId, onSuccess, onAttempt }: Spee
     mediaRecorder.onstop = async () => {
       setIsRecording(false);
       const audioBlob = new Blob(audioChunks.current, { type: 'audio/wav' });
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
 
-      const token = localStorage.getItem('jwtToken') || '';
+      const token = localStorage.getItem('accessToken') || '';
       try {
-        const aiText = await continueVoiceConversation(conversationId, Array.from(uint8Array), token);
-        setAIResponse(aiText);
+        const score = await evaluatePronunciation(audioBlob, token);
+        setAIResponse(`발음 평가 점수: ${score}/10`);
         onSuccess();
-      } catch {
-        setFeedback('서버와 통신 중 오류가 발생했습니다.');
+      } catch (error) {
+        console.error('발음 평가 오류:', error);
+        setFeedback('발음 평가 중 오류가 발생했습니다.');
       }
     };
 
@@ -92,9 +90,9 @@ export function SpeechRecognition({ conversationId, onSuccess, onAttempt }: Spee
         </div>
         {feedback && <div className="text-red-600 font-semibold">{feedback}</div>}
         {aiResponse && (
-          <div>
-            <h4>AI 응답:</h4>
-            <p>{aiResponse}</p>
+          <div className="text-center">
+            <h4 className="font-semibold text-lg mb-2">발음 평가 결과</h4>
+            <p className="text-blue-600 font-bold">{aiResponse}</p>
           </div>
         )}
       </CardContent>

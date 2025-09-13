@@ -54,6 +54,10 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    // JWT 토큰 제거
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    
     setAppState('welcome');
     setActiveTab('home');
     setUserProfile(null);
@@ -61,6 +65,10 @@ export default function App() {
   };
 
   const handleDeleteAccount = () => {
+    // JWT 토큰 제거
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    
     setAppState('welcome');
     setActiveTab('home');
     setUserProfile(null);
@@ -75,7 +83,7 @@ export default function App() {
         return (
           <LoginScreen 
             onLogin={() => setAppState('language')}
-            onSignUp={() => setAppState('language')}
+            onSignUp={() => {}}
           />
         );
       case 'language':
@@ -120,9 +128,6 @@ export default function App() {
               </div>
               
               <div className="flex items-center space-x-3">
-                <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                  {points} 포인트
-                </div>
                 <SettingsMenu
                   isDarkMode={isDarkMode}
                   onDarkModeToggle={handleDarkModeToggle}
