@@ -13,11 +13,11 @@ AI 기반 학습 자료 생성, 발음 교정, 대화 연습 기능을 제공하
 <br>
 
 ## 💡 2. 개발 동기
+
 한국에 거주하는 다문화 가정의 학생들은 학교에서 **언어 장벽**으로 어려움을 겪는 경우가 많습니다.  
 특히 초등학생은 또래와 의사소통이나 수업 참여에 제약이 생기곤 합니다.  
 
 저희 팀은 이러한 학생들이 **쉽고 재미있게 한국어를 배우고, 자신감을 가지고 대화할 수 있도록** 본 서비스를 기획했습니다.  
-
 
 AI를 활용한 발음 교정, 대화 연습, 맞춤형 학습 자료 제공을 통해 교실 안팎에서 **자연스럽게 한국어를 익히는 경험**을 목표로 합니다.
 
@@ -32,37 +32,50 @@ AI를 활용한 발음 교정, 대화 연습, 맞춤형 학습 자료 제공을 
 
 <br>
 
+---
+
 ## 🛠 4. 기술 스택 및 개발 환경
 
- 상세 내용은 `/Backend` 와 `/Frontend` 의 `README.md`를 참고해주세요.
+- 기술 스택을 포함한 상세 내용은 [백엔드 상세 리드미 바로가기](./Backend/README.md) 와 [프론트엔드 상세 리드미 바로가기](./Frontend/README.md) 의 내용을 참고해주세요.
 
-### ⚙️ 백엔드
-![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white) 
-![IntelliJ IDEA](https://img.shields.io/badge/IntelliJIDEA-000000.svg?style=for-the-badge&logo=intellij-idea&logoColor=white)
-![Visual Studio Code](https://img.shields.io/badge/Visual%20Studio%20Code-0078d7.svg?style=for-the-badge&logo=visual-studio-code&logoColor=white)
+### 백엔드 개발 환경
 
+<img src = "https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white">
+<Br>
+<img src="https://img.shields.io/badge/IntelliJIDEA-000000.svg?style=for-the-badge&logo=intellij-idea&logoColor=white">
+<img src="https://img.shields.io/badge/Visual%20Studio%20Code-0078d7.svg?style=for-the-badge&logo=visual-studio-code&logoColor=white">
+<Br>
 <img src="https://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">
 <img src="https://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
+<br>
 <img src="https://img.shields.io/badge/H2%20Database-09476B?style=for-the-badge&logo=h2&logoColor=white">
 
-### 🎨 프론트엔드
+### 프론트엔드 개발 환경
+
 ![Visual Studio Code](https://img.shields.io/badge/Visual%20Studio%20Code-0078d7.svg?style=for-the-badge&logo=visual-studio-code&logoColor=white)
+
+### 디자인
+
 <img src="https://img.shields.io/badge/figma-%23F24E1E.svg?style=for-the-badge&logo=figma&logoColor=white">
 
+### 공통
 
-### 📚 공통 
-![Git](https://img.shields.io/badge/Git-F05032.svg?&style=for-the-badge&logo=Git&logoColor=white)
+<img src="https://img.shields.io/badge/Git-F05032.svg?&style=for-the-badge&logo=Git&logoColor=white">
 <img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white">
-![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)
-![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
+<br>
+<img src="https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white">
+<br>
+<img src="https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white">
 
-### 🚀 배포 및 운영 환경
+### 배포 및 운영 환경
+
 - **AI 통합**: Spring AI Framework, Chat Memory, Structured Output  
 - **보안/인증**: Spring Security, JWT 기반 인증  
 - **DB 설계**: H2 DB, Spring Data JPA, QueryDSL  
-- **배포 환경**: AWS EC2 · Docker · GitHub Actions · Amazon ECR 
+- **배포 환경**: AWS EC2 · Docker · GitHub Actions · Amazon ECR
 
-### 🤝 협업 방식
+### 협업 방식
+
 - 기능별 분업 (프론트/백)  
 - 페어 프로그래밍 (AI 통합)  
 - Pull Request 기반 코드 리뷰  
@@ -78,12 +91,17 @@ Moon_Light_Hackathon2025-HalfMoon/
 ├── README.md            # 프로젝트 전체 문서
 └── package-lock.json    # 프론트엔드 의존성 잠금 파일
 ```
+
 <br>
 
-## 🚀 5. 기능 명세서
+---
 
-### 🌱 (1) 한국어 학습 자료 생성
+## 5. 기능 명세서
+
+### (1) 한국어 학습 자료 생성
+
 AI가 학습자의 수준과 주제에 맞춰 문장을 자동 생성합니다.  
+
 - 난이도: 초급 · 중급 · 고급  
 - 주제: 자기소개 · 가족 · 학교 · 음식 · 날씨  
 - 각 문장에 의미 설명 + 새로운 단어 표시  
@@ -93,8 +111,10 @@ AI가 학습자의 수준과 주제에 맞춰 문장을 자동 생성합니다.
 
 ---
 
-### 💬 (2) 주제별 AI 대화 연습
+### (2) 주제별 AI 대화 연습
+
 선택한 주제로 AI와 실시간 대화를 나눌 수 있습니다.  
+
 - 맞춤형 대화 시작  
 - 대화 맥락 유지 (Chat Memory)  
 - 음성 입력(STT) 지원  
@@ -102,43 +122,45 @@ AI가 학습자의 수준과 주제에 맞춰 문장을 자동 생성합니다.
 
 > 🧠 사용 AI: **GPT-4o-mini (대화)** · **Whisper-1 (STT)** · **Spring AI Chat Memory**
 
----
-### 🔊 (3) 한국어 발음 학습
+### (3) 한국어 발음 학습
+
 AI가 발음을 듣고 평가해줍니다.  
+
 - 문장을 음성으로 변환(TTS)  
 - 사용자 발음 녹음 후 평가 (10점 만점)  
 - 부족한 부분 피드백 제공  
 
 > 🧠 사용 AI: **OpenAI TTS-1** · **Google Gemini-2.5-Flash**
 
----
+### (4) 학습 진도 관리
 
-### 📊 (4) 학습 진도 관리
 학습자가 얼마나 공부했는지 추적합니다.  
+
 - 난이도/주제별 완료율 표시  
 - 월별 학습 목표 설정 & 추적  
 - 학습 포인트 시스템  
 - 개인 통계 확인 가능  
 
----
+### (5) 사용자 인증 및 관리
 
-### 🔐 (5) 사용자 인증 및 관리
 안전한 학습 환경을 위한 회원 시스템을 제공합니다.
+
 - JWT 기반 회원가입 & 로그인  
 - 개인 학습 데이터 보안  
 - 사용자별 학습 이력 저장  
 
----
-
-### 📝 (6) API
+### (6) API
+>
 > 전체 API 명세는 [반월 서버 API 문서](http://3.36.107.16/swagger-ui/index.html) 에서 확인 가능합니다.  
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 **주요 카테고리**
-1. 📄 게시글 관리: 학습 자료 CRUD  
-2. 💭 댓글 기능: 학습 피드백  
-3. 👤 사용자 정보: 프로필 & 인증 관리  
-4. 🈴 한국어 학습: 자료 생성 & 조회  
-5. 🎯 목표 관리: 학습 목표 설정 & 추적  
-6. 📚 학습 기록: 진도 & 성취도 관리  
+
+1. 게시글 관리: 학습 자료 CRUD  
+2. 댓글 기능: 학습 피드백  
+3. 사용자 정보: 프로필 & 인증 관리  
+4. 한국어 학습: 자료 생성 & 조회  
+5. 목표 관리: 학습 목표 설정 & 추적  
+6. 학습 기록: 진도 & 성취도 관리  
+
 ---
