@@ -4,6 +4,7 @@ import axios from "axios";
 const API = axios.create({
   baseURL: "http://3.36.107.16:80", // Swagger 문서 base URL
   withCredentials: true, // 필요 시 쿠키/세션 포함
+  timeout: 100000 //10초
 });
 
 // 요청 인터셉터: JWT 토큰 자동 추가
