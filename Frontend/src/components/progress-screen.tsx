@@ -1,200 +1,164 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
-import { MoonMascot } from './moon-mascot';
-import { Calendar, Book, MessageCircle, Trophy, Star, Flame } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion"; 
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Calendar, Book, MessageCircle, Trophy, Flame } from "lucide-react";
+import { getMyRecord, MyRecordResponse } from "../api/record"; 
+import { getMonthlyGoal, deleteMonthlyGoal, setMonthlyGoal, GoalResponse } from "../api/goal";
+import { getCompletionRate, CompletionRateResponse } from "../api/subject";
 
-interface ProgressScreenProps {
-  points: number;
-  userProfile: any;
-}
 
-export function ProgressScreen({ points, userProfile }: ProgressScreenProps) {
-  const monthlyGoal = 1000;
-  const progressPercentage = Math.min((points / monthlyGoal) * 100, 100);
-  
+export function ProgressScreen() {
+  const [record, setRecord] = useState<MyRecordResponse | null>(null);
+  const [goal, setGoal] = useState<GoalResponse | null>(null);
+  const [newGoal, setNewGoal] = useState<number>(0);
+  const [message, setMessage] = useState(""); 
+  const [loading, setLoading] = useState(true);
+  const [completionRate, setCompletionRate] = useState<CompletionRateResponse | null>(null);
+
+  useEffect(() => {
+  Promise.all([
+    getMyRecord(),
+    getMonthlyGoal(),
+    getCompletionRate("BEGINNER")   // ✅ 새로 추가
+  ])
+    .then(([recordData, goalData, completionData]) => {
+      setRecord(recordData);
+      setGoal(goalData);
+      setCompletionRate(completionData);   // ✅ 새로 추가
+      setLoading(false);
+    })
+    .catch((err) => {
+      console.error("데이터 불러오기 실패:", err);
+      setLoading(false);
+    });
+}, []);
+
+const handleDeleteGoal = async () => {
+  try {
+    await deleteMonthlyGoal();
+    setGoal(null);  // ⬅️ 삭제된 상태 반영
+    setMessage("이번 달 목표가 삭제되었습니다 ✅");
+  } catch (err) {
+    console.error(err);
+    setMessage("목표 삭제에 실패했습니다 ❌");
+  }
+};
+
+const handleSetGoal = async () => {
+  if (!newGoal || newGoal <= 0) {
+    setMessage("목표 포인트는 1 이상이어야 합니다 ❌");
+    return;
+  }
+  try {
+    const month = new Date().toISOString().slice(0, 7); // YYYY-MM 형식
+    await setMonthlyGoal({ month, goal: newGoal });
+    setGoal({ month, goalPoints: newGoal, currentPoints: currentPoints });
+    setMessage("이번 달 목표가 설정되었습니다 ✅");
+  } catch (err) {
+    console.error(err);
+    setMessage("목표 설정에 실패했습니다 ❌");
+  }
+};
+
+  if (loading) {
+    return <p className="text-center text-gray-500">불러오는 중...</p>;
+  }
+
+  if (!record) {
+    return <p className="text-center text-red-500">데이터를 가져오지 못했습니다.</p>;
+  }
+
+  const currentPoints = goal?.currentPoints ?? 0;   // ⬅️ goal API 값 사용
+const goalPoints = goal?.goalPoints ?? 1000;      // ⬅️ 미설정 시 기본값
+const progressPercentage = Math.min((currentPoints / goalPoints) * 100, 100);
+
+
+  // ✅ API 데이터 기반 stats
   const stats = [
     {
-      title: '학습한 단어',
-      value: Math.floor(points / 10),
-      unit: '개',
+      title: "학습한 단어",
+      value: record.wordCnt,
+      unit: "개",
       icon: Book,
-      color: 'from-blue-400 to-blue-600',
-      bgColor: 'bg-blue-50'
+      color: "from-blue-400 to-blue-600",
+      bgColor: "bg-blue-50",
     },
     {
-      title: '완료한 대화',
-      value: Math.floor(points / 50),
-      unit: '개',
+      title: "완료한 대화",
+      value: record.talkCnt,
+      unit: "개",
       icon: MessageCircle,
-      color: 'from-green-400 to-green-600',
-      bgColor: 'bg-green-50'
+      color: "from-green-400 to-green-600",
+      bgColor: "bg-green-50",
     },
     {
-      title: '연속 학습일',
-      value: 3,
-      unit: '일',
+      title: "연속 학습일",
+      value: record.continueDay,
+      unit: "일",
       icon: Flame,
-      color: 'from-orange-400 to-orange-600',
-      bgColor: 'bg-orange-50'
+      color: "from-orange-400 to-orange-600",
+      bgColor: "bg-orange-50",
     },
     {
-      title: '이번 달 순위',
-      value: Math.max(1, Math.floor(Math.random() * 20) + 1),
-      unit: '위',
+      title: "이번 달 순위",
+      value: record.myRank,
+      unit: "위",
       icon: Trophy,
-      color: 'from-yellow-400 to-yellow-600',
-      bgColor: 'bg-yellow-50'
-    }
+      color: "from-yellow-400 to-yellow-600",
+      bgColor: "bg-yellow-50",
+    },
   ];
 
+  // ✅ 기존 badge/weeklyData 부분은 그대로 두고 points만 교체
   const badges = [
     { 
-      name: '첫 걸음', 
-      description: '첫 학습 완료', 
-      earned: points >= 10, 
-      icon: '🐣',
-      color: 'bg-green-100 text-green-800',
-      category: 'basic'
+      name: "첫 걸음", 
+      description: "첫 학습 완료", 
+      earned: record.wordCnt >= 1, 
+      icon: "🐣",
+      color: "bg-green-100 text-green-800",
+      category: "basic",
     },
     { 
-      name: '말하기 초보', 
-      description: '발음 연습 10회', 
-      earned: points >= 50, 
-      icon: '🗣️',
-      color: 'bg-blue-100 text-blue-800',
-      category: 'speaking'
+      name: "말하기 초보", 
+      description: "대화 10회 완료", 
+      earned: record.talkCnt >= 10, 
+      icon: "🗣️",
+      color: "bg-blue-100 text-blue-800",
+      category: "speaking",
     },
     { 
-      name: '단어 수집가', 
-      description: '단어 50개 학습', 
-      earned: points >= 100, 
-      icon: '📚',
-      color: 'bg-purple-100 text-purple-800',
-      category: 'vocabulary'
+      name: "성실한 학습자", 
+      description: "연속 7일 학습", 
+      earned: record.continueDay >= 7, 
+      icon: "⭐",
+      color: "bg-pink-100 text-pink-800",
+      category: "consistency",
     },
     { 
-      name: '대화 달인', 
-      description: '대화 연습 20회', 
-      earned: points >= 200, 
-      icon: '💬',
-      color: 'bg-yellow-100 text-yellow-800',
-      category: 'conversation'
+      name: "랭킹 챔피언", 
+      description: "1위 달성", 
+      earned: record.myRank === 1, 
+      icon: "🏆",
+      color: "bg-amber-100 text-amber-800",
+      category: "achievement",
     },
-    { 
-      name: '성실한 학습자', 
-      description: '연속 7일 학습', 
-      earned: points >= 300, 
-      icon: '⭐',
-      color: 'bg-pink-100 text-pink-800',
-      category: 'consistency'
-    },
-    { 
-      name: 'Sunrise Speaker', 
-      description: '아침 학습 10회', 
-      earned: points >= 150, 
-      icon: '🌅',
-      color: 'bg-orange-100 text-orange-800',
-      category: 'timing'
-    },
-    { 
-      name: '문법 마스터', 
-      description: '문법 시험 90점 이상', 
-      earned: points >= 400, 
-      icon: '📝',
-      color: 'bg-indigo-100 text-indigo-800',
-      category: 'grammar'
-    },
-    { 
-      name: '발음 달인', 
-      description: '발음 평가 A등급', 
-      earned: points >= 350, 
-      icon: '🎤',
-      color: 'bg-rose-100 text-rose-800',
-      category: 'pronunciation'
-    },
-    { 
-      name: '친구 만들기', 
-      description: '게시판 글 10개 작성', 
-      earned: points >= 250, 
-      icon: '👥',
-      color: 'bg-teal-100 text-teal-800',
-      category: 'social'
-    },
-    { 
-      name: '도움이 되는 친구', 
-      description: '댓글 50개 작성', 
-      earned: points >= 500, 
-      icon: '💝',
-      color: 'bg-emerald-100 text-emerald-800',
-      category: 'social'
-    },
-    { 
-      name: '완벽주의자', 
-      description: '모든 주제 완료', 
-      earned: points >= 800, 
-      icon: '🏆',
-      color: 'bg-amber-100 text-amber-800',
-      category: 'achievement'
-    },
-    { 
-      name: '한국어 전문가', 
-      description: '고급 과정 완료', 
-      earned: points >= 1000, 
-      icon: '🎓',
-      color: 'bg-violet-100 text-violet-800',
-      category: 'mastery'
-    },
-    { 
-      name: '문화 탐험가', 
-      description: '문화 콘텐츠 20개 학습', 
-      earned: points >= 450, 
-      icon: '🏛️',
-      color: 'bg-slate-100 text-slate-800',
-      category: 'culture'
-    },
-    { 
-      name: '시험 챔피언', 
-      description: '시험 10회 만점', 
-      earned: points >= 600, 
-      icon: '🥇',
-      color: 'bg-yellow-100 text-yellow-800',
-      category: 'test'
-    },
-    { 
-      name: '챗봇 마스터', 
-      description: '챗봇 대화 100회', 
-      earned: points >= 700, 
-      icon: '🤖',
-      color: 'bg-cyan-100 text-cyan-800',
-      category: 'chatbot'
-    },
-    { 
-      name: '월간 우수상', 
-      description: '한 달 연속 1위', 
-      earned: false, 
-      icon: '🏅',
-      color: 'bg-gold-100 text-gold-800',
-      category: 'special'
-    }
   ];
 
   const weeklyData = [
-    { day: '월', points: 45 },
-    { day: '화', points: 30 },
-    { day: '수', points: 60 },
-    { day: '목', points: 20 },
-    { day: '금', points: 55 },
-    { day: '토', points: 40 },
-    { day: '일', points: 35 }
+    { day: "월", points: 45 },
+    { day: "화", points: 30 },
+    { day: "수", points: 60 },
+    { day: "목", points: 20 },
+    { day: "금", points: 55 },
+    { day: "토", points: 40 },
+    { day: "일", points: 35 },
   ];
+  const maxWeeklyPoints = Math.max(...weeklyData.map((d) => d.points));
 
-  const maxWeeklyPoints = Math.max(...weeklyData.map(d => d.points));
-
-  const earnedBadges = badges.filter(badge => badge.earned);
-  const unEarnedBadges = badges.filter(badge => !badge.earned);
+  const earnedBadges = badges.filter((badge) => badge.earned);
+  const unEarnedBadges = badges.filter((badge) => !badge.earned);
 
   return (
     <div className="web-container mx-auto p-6 space-y-8">
@@ -207,6 +171,35 @@ export function ProgressScreen({ points, userProfile }: ProgressScreenProps) {
         <h1 className="text-3xl text-gray-800">나의 학습 진도</h1>
         <p className="text-gray-600 text-lg">멋진 성과를 확인해보세요! 🎉</p>
       </motion.div>
+
+{/* ✅ 월 목표 설정 & 삭제 */}
+<div className="text-right mb-4 space-y-2">
+  <div className="flex justify-end space-x-2">
+    <input
+      type="number"
+      placeholder="목표 포인트 입력"
+      className="px-3 py-2 border rounded-lg text-sm"
+      value={newGoal}
+      onChange={(e) => setNewGoal(Number(e.target.value))}
+    />
+    <button
+      onClick={handleSetGoal}
+      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+    >
+      월 목표 설정
+    </button>
+  </div>
+  <button
+    onClick={handleDeleteGoal}
+    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+  >
+    월 목표 삭제
+  </button>
+  {message && (
+    <p className="text-sm text-gray-600 mt-2 text-center">{message}</p>
+  )}
+</div>
+
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Left Column - Monthly Progress */}
@@ -289,8 +282,8 @@ export function ProgressScreen({ points, userProfile }: ProgressScreenProps) {
                 
                 <div className="space-y-3">
                   <div className="flex justify-between text-lg opacity-90">
-                    <span>현재 포인트: {points}</span>
-                    <span>목표: {monthlyGoal}</span>
+                    <span>현재 포인트: {currentPoints}</span>
+                    <span>목표: {goalPoints ?? "미설정"}</span>
                   </div>
                   <div className="w-full bg-white/20 rounded-full h-4">
                     <motion.div 
@@ -301,12 +294,42 @@ export function ProgressScreen({ points, userProfile }: ProgressScreenProps) {
                     />
                   </div>
                   <div className="text-lg opacity-80">
-                    {progressPercentage >= 100 ? '목표 달성! 🎉' : `${monthlyGoal - points}포인트 더 필요해요!`}
-                  </div>
+{progressPercentage >= 100
+    ? '목표 달성! 🎉'
+    : goalPoints
+      ? `${goalPoints - currentPoints}포인트 더 필요해요!`
+      : '목표가 설정되지 않았습니다'}
+</div>
+
                 </div>
               </CardContent>
             </Card>
           </motion.div>
+
+          {completionRate && (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.4 }}
+  >
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-xl">📊 난이도별 이수율 (BEGINNER)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2">
+          {completionRate.subjectCompletionRates.map((item) => (
+            <li key={item.subject} className="flex justify-between">
+              <span className="font-medium">{item.subject}</span>
+              <span className="text-gray-600">{item.completionRate.toFixed(1)}%</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  </motion.div>
+)}
+
 
           {/* Statistics Grid */}
           <motion.div
