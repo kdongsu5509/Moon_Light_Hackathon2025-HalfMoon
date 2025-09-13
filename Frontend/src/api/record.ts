@@ -10,6 +10,6 @@ export interface MyRecordResponse {
 
 // 학습 기록 조회 API
 export const getMyRecord = async (): Promise<MyRecordResponse> => {
-  const res = await API.get("/my/record");
+  const res = await API.get("/api/my/record");
   return res.data.data; // Swagger 응답에서 data 부분만 추출
 };

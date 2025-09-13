@@ -8,7 +8,7 @@ export interface GoalResponse {
 
 export const getMonthlyGoal = async (): Promise<GoalResponse | null> => {
   try {
-    const res = await API.get("/my/goal", {
+    const res = await API.get("/api/my/goal", {
       headers: { accept: "application/json" },
     });
     if (res.data.code === 200) {
@@ -38,7 +38,7 @@ export interface SetGoalRequest {
 
 export const setMonthlyGoal = async (data: SetGoalRequest): Promise<string> => {
   try {
-    const res = await API.post("/my/goal", data, {
+    const res = await API.post("/api/my/goal", data, {
       headers: {
         accept: "*/*",
         "Content-Type": "application/json",
@@ -67,7 +67,7 @@ export const setMonthlyGoal = async (data: SetGoalRequest): Promise<string> => {
 
 export const deleteMonthlyGoal = async (): Promise<void> => {
   try {
-    const res = await API.delete("/my/goal", {
+    const res = await API.delete("/api/my/goal", {
       headers: { accept: "*/*" },
     });
     if (res.data.code !== 200) {
