@@ -56,5 +56,12 @@
     server: {
       port: 3000,
       open: true,
+      proxy: {
+        '/api': {
+         target: 'http://3.36.107.16:80',
+         changeOrigin: true,
+         rewrite: (path) => path.replace(/^\/api/, '/api'),
+        },
+      },
     },
   });
