@@ -1,6 +1,6 @@
 import API from "./axios";
 
-export type SubjectType = "INTRODUCTION" | "FAMILY" | "SCHOOL" | "FOOD" | "WEATHER";
+export type SubjectType = "SELFINTRODUCTION" | "FAMILY" | "SCHOOL" | "FOOD" | "WEATHER";
 export type StudyLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 
 export interface Sentence {

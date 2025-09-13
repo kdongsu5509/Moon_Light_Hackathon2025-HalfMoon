@@ -5,7 +5,7 @@ export type StudyLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 
 // 주제별 완료율 타입
 export interface SubjectCompletionRate {
-  subject: "INTRODUCTION" | "FAMILY" | "SCHOOL" | "FOOD" | "WEATHER";
+  subject: "SELFINTRODUCTION" | "FAMILY" | "SCHOOL" | "FOOD" | "WEATHER";
   completionRate: number; // 0.0 ~ 100.0
 }
 
