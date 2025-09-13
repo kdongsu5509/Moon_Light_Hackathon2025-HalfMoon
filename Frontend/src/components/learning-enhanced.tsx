@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useLanguage } from './language-context';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -9,6 +9,8 @@ import { TopicLearning } from './topic-learning';
 import { LearningTest } from './learning-test';
 import { ChatbotPractice } from './chatbot-practice';
 import { BookOpen, Brain, MessageCircle, GraduationCap, Trophy, Star } from 'lucide-react';
+import { getCompletionRate, CompletionRateResponse } from '../api/subject';
+import { Progress } from './ui/progress';
 
 const topics = [
   { 
@@ -74,9 +76,41 @@ export function LearningEnhanced({ onPointsEarned }: LearningEnhancedProps) {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string>('beginner');
   const [activeMode, setActiveMode] = useState<'topics' | 'test' | 'chatbot'>('topics');
+  const [completionRate, setCompletionRate] = useState<CompletionRateResponse | null>(null);
+
+  // 완료율 데이터 로드 (선택된 난이도에 따라)
+  useEffect(() => {
+    const loadCompletionRate = async () => {
+      try {
+        const level = selectedLevel.toUpperCase() as "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+        const data = await getCompletionRate(level);
+        setCompletionRate(data);
+      } catch (error) {
+        console.error("완료율 조회 실패:", error);
+      }
+    };
+    loadCompletionRate();
+  }, [selectedLevel]);
+
+  // 주제별 완료율 가져오기
+  const getTopicCompletionRate = (topicId: string) => {
+    if (!completionRate) return 0;
+    
+    const subjectMap: { [key: string]: string } = {
+      'selfIntroduction': 'SELFINTRODUCTION',
+      'family': 'FAMILY',
+      'school': 'SCHOOL',
+      'food': 'FOOD',
+      'weather': 'WEATHER'
+    };
+    
+    const subject = subjectMap[topicId];
+    const rate = completionRate.subjectCompletionRates.find(item => item.subject === subject);
+    return rate ? rate.completionRate : 0;
+  };
 
   if (activeMode === 'test') {
-    const reviewTestSubject = localStorage.getItem('reviewTestSubject') || 'SELF_INTRODUCTION';
+    const reviewTestSubject = localStorage.getItem('reviewTestSubject') || 'SELFINTRODUCTION';
     const reviewTestLevel = localStorage.getItem('reviewTestLevel') || selectedLevel.toUpperCase();
     
     return (
@@ -115,14 +149,14 @@ export function LearningEnhanced({ onPointsEarned }: LearningEnhancedProps) {
           setActiveMode('test');
           // 주제를 영어로 변환하는 함수 필요
           const subjectMap: { [key: string]: string } = {
-            'selfIntroduction': 'SELF_INTRODUCTION',
+            'selfIntroduction': 'SELFINTRODUCTION',
             'family': 'FAMILY',
             'school': 'SCHOOL',
             'food': 'FOOD',
             'weather': 'WEATHER'
           };
           // 복습 시험을 위한 상태 저장 (실제로는 context나 state management 사용)
-          localStorage.setItem('reviewTestSubject', subjectMap[topic] || 'SELF_INTRODUCTION');
+          localStorage.setItem('reviewTestSubject', subjectMap[topic] || 'SELFINTRODUCTION');
           localStorage.setItem('reviewTestLevel', level.toUpperCase());
         }}
       />
@@ -234,7 +268,9 @@ export function LearningEnhanced({ onPointsEarned }: LearningEnhancedProps) {
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {topics.map((topic, index) => (
+          {topics.map((topic, index) => {
+            const topicCompletionRate = getTopicCompletionRate(topic.id);
+            return (
             <motion.div
               key={topic.id}
               initial={{ opacity: 0, y: 20 }}
@@ -274,14 +310,12 @@ export function LearningEnhanced({ onPointsEarned }: LearningEnhancedProps) {
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs text-gray-600">
                         <span>{levelInfo[selectedLevel as keyof typeof levelInfo].name} 진도</span>
-                        <span>{Math.floor(Math.random() * 80) + 10}% 완료</span>
+                        <span>{topicCompletionRate.toFixed(1)}% 완료</span>
                       </div>
-                      <div className="w-full bg-white/70 rounded-full h-2">
-                        <div 
-                          className={`h-full bg-gradient-to-r ${topic.color} rounded-full transition-all duration-500`}
-                          style={{ width: `${Math.floor(Math.random() * 80) + 10}%` }}
-                        />
-                      </div>
+                      <Progress 
+                        value={topicCompletionRate} 
+                        className="h-2 bg-white/70"
+                      />
                     </div>
                     
                     <Button 
@@ -297,7 +331,8 @@ export function LearningEnhanced({ onPointsEarned }: LearningEnhancedProps) {
                 </CardContent>
               </Card>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </motion.div>
 

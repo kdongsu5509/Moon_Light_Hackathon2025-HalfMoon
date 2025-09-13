@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useLanguage } from './language-context';
 import { Card, CardContent } from './ui/card';
@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { BookOpen, MessageSquare, TrendingUp, Star, Calendar, Users } from 'lucide-react';
 import { MoonMascot } from './moon-mascot';
 import { SettingsMenu } from './settings-menu';
+import { getMyRecord, MyRecordResponse } from '../api/record';
 
 interface HomeDashboardProps {
   points: number;
@@ -27,6 +28,26 @@ export function HomeDashboard({
   onDeleteAccount = () => {} 
 }: HomeDashboardProps) {
   const { t } = useLanguage();
+  const [record, setRecord] = useState<MyRecordResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // API에서 학습 기록 데이터 가져오기
+  useEffect(() => {
+    const loadRecord = async () => {
+      try {
+        console.log("🏠 홈 화면에서 학습 기록 로딩 시작...");
+        const recordData = await getMyRecord();
+        console.log("🏠 홈 화면에서 받은 학습 기록:", recordData);
+        setRecord(recordData);
+      } catch (error) {
+        console.error("🏠 홈 화면 학습 기록 로딩 실패:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRecord();
+  }, []);
 
   const quickActions = [
     {
@@ -49,28 +70,55 @@ export function HomeDashboard({
     }
   ];
 
-  const achievements = [
+  // API 데이터 기반 achievements
+  const achievements = record ? [
     { 
       label: '연속 학습', 
-      value: '3일', 
+      value: `${record.continueDay}일`, 
       icon: '🔥',
       color: 'text-orange-600 bg-orange-50'
     },
     { 
       label: '학습한 단어', 
-      value: `${Math.floor(points / 10)}개`, 
+      value: `${record.wordCnt}개`, 
       icon: '📝',
       color: 'text-blue-600 bg-blue-50'
     },
     { 
       label: '완료한 대화', 
-      value: `${Math.floor(points / 50)}개`, 
+      value: `${record.talkCnt}개`, 
       icon: '🗣️',
       color: 'text-green-600 bg-green-50'
     },
     { 
-      label: '획득 배지', 
-      value: points > 500 ? '3개' : points > 200 ? '2개' : '1개', 
+      label: '내 순위', 
+      value: `${record.myRank}위`, 
+      icon: '🏆',
+      color: 'text-yellow-600 bg-yellow-50'
+    }
+  ] : [
+    // 로딩 중이거나 데이터가 없을 때 기본값
+    { 
+      label: '연속 학습', 
+      value: '0일', 
+      icon: '🔥',
+      color: 'text-orange-600 bg-orange-50'
+    },
+    { 
+      label: '학습한 단어', 
+      value: '0개', 
+      icon: '📝',
+      color: 'text-blue-600 bg-blue-50'
+    },
+    { 
+      label: '완료한 대화', 
+      value: '0개', 
+      icon: '🗣️',
+      color: 'text-green-600 bg-green-50'
+    },
+    { 
+      label: '내 순위', 
+      value: '-위', 
       icon: '🏆',
       color: 'text-yellow-600 bg-yellow-50'
     }
@@ -134,9 +182,6 @@ export function HomeDashboard({
           </div>
           
           <div className="flex items-center space-x-4">
-            <div className="text-sm text-slate-200 bg-white/12 backdrop-blur-sm px-4 py-2 rounded-full border border-white/25">
-              {points} 포인트
-            </div>
             <SettingsMenu
               isDarkMode={isDarkMode}
               onDarkModeToggle={onDarkModeToggle}
@@ -179,100 +224,8 @@ export function HomeDashboard({
           <p className="text-lg text-gray-600 mb-6">오늘도 함께 한국어를 배워볼까요?</p>
         </motion.div>
 
-        {/* Progress Summary */}
-        <motion.div
-          className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 cursor-pointer hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          onClick={() => onNavigate('progress')}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="scale-75 relative">
-                {/* 진행률에 따른 달 모양 */}
-                <div className="relative w-16 h-16">
-                  {/* 배경 달 (회색) */}
-                  <div className="absolute inset-0 w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full shadow-inner opacity-40" />
+   
                   
-                  {/* 진행률에 따라 채워지는 달 */}
-                  <motion.div
-                    className="absolute inset-0 overflow-hidden rounded-full"
-                    initial={{ clipPath: "inset(100% 0 0 0)" }}
-                    animate={{ 
-                      clipPath: `inset(${100 - Math.min((points / 1000) * 100, 100)}% 0 0 0)` 
-                    }}
-                    transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
-                  >
-                    <div className="w-16 h-16 bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 rounded-full shadow-lg relative">
-                      {/* 달 얼굴 - 진행률이 50% 이상일 때만 보이기 */}
-                      {Math.min((points / 1000) * 100, 100) > 50 && (
-                        <motion.div
-                          className="absolute inset-0 flex items-center justify-center text-lg"
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 1, duration: 0.5 }}
-                        >
-                          😊
-                        </motion.div>
-                      )}
-                      
-                      {/* 반짝이 효과 */}
-                      {Math.min((points / 1000) * 100, 100) > 75 && (
-                        <>
-                          <motion.div
-                            className="absolute -top-1 -right-1 text-xs"
-                            animate={{
-                              scale: [0.8, 1.2, 0.8],
-                              rotate: [0, 180, 360],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              delay: 0.5,
-                            }}
-                          >
-                            ✨
-                          </motion.div>
-                          <motion.div
-                            className="absolute -bottom-1 -left-1 text-xs"
-                            animate={{
-                              scale: [1.2, 0.8, 1.2],
-                              rotate: [360, 180, 0],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              delay: 1,
-                            }}
-                          >
-                            ✨
-                          </motion.div>
-                        </>
-                      )}
-                    </div>
-                  </motion.div>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-800">9월 학습 진행률</h3>
-                <div className="text-3xl font-bold text-gray-900">{points} / 1000</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-600 mb-2">{Math.round((points/1000)*100)}% 완료</div>
-              <div className="w-32 bg-gray-200 rounded-full h-2 overflow-hidden">
-                <motion.div 
-                  className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min((points / 1000) * 100, 100)}%` }}
-                  transition={{ duration: 1.5, delay: 0.5 }}
-                />
-              </div>
-              <div className="text-xs text-gray-500 mt-1">클릭하여 상세보기 →</div>
-            </div>
-          </div>
-        </motion.div>
 
       {/* Quick Actions */}
       <motion.div
@@ -329,24 +282,46 @@ export function HomeDashboard({
         <h2 className="text-2xl text-gray-800 text-center">나의 기록</h2>
         
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {achievements.map((achievement, index) => (
-            <motion.div
-              key={achievement.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.9 + index * 0.1 }}
-            >
-              <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <span className="text-3xl">{achievement.icon}</span>
-                  </div>
-                  <div className="text-2xl font-bold mb-2">{achievement.value}</div>
-                  <div className="text-sm text-gray-600">{achievement.label}</div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+          {loading ? (
+            // 로딩 중일 때 스켈레톤 표시
+            [...Array(4)].map((_, index) => (
+              <motion.div
+                key={`loading-${index}`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.9 + index * 0.1 }}
+              >
+                <Card className="bg-white shadow-lg">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-16 h-16 bg-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+                      <div className="w-8 h-8 bg-gray-300 rounded"></div>
+                    </div>
+                    <div className="h-6 bg-gray-200 rounded mb-2 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            achievements.map((achievement, index) => (
+              <motion.div
+                key={achievement.label}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.9 + index * 0.1 }}
+              >
+                <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <span className="text-3xl">{achievement.icon}</span>
+                    </div>
+                    <div className="text-2xl font-bold mb-2">{achievement.value}</div>
+                    <div className="text-sm text-gray-600">{achievement.label}</div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          )}
         </div>
       </motion.div>
 

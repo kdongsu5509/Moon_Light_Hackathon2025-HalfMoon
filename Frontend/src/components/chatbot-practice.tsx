@@ -21,45 +21,45 @@ interface Message {
 
 const scenarios = [
   {
-    id: 'greeting',
-    name: '인사하기',
+    id: 'INTRODUCTION',
+    name: '자기소개',
     description: '처음 만나는 사람과 인사 나누기',
     icon: '👋',
     color: 'bg-blue-100 text-blue-800'
   },
   {
-    id: 'shopping',
-    name: '쇼핑하기',
-    description: '가게에서 물건 사고 대화하기',
-    icon: '🛒',
-    color: 'bg-green-100 text-green-800'
-  },
-  {
-    id: 'restaurant',
+    id: 'FOOD',
     name: '음식점에서',
     description: '음식점에서 주문하고 대화하기',
     icon: '🍽️',
     color: 'bg-orange-100 text-orange-800'
   },
   {
-    id: 'school',
+    id: 'SCHOOL',
     name: '학교에서',
     description: '선생님, 친구들과 대화하기',
     icon: '🏫',
     color: 'bg-purple-100 text-purple-800'
   },
   {
-    id: 'family',
+    id: 'FAMILY',
     name: '가족과 대화',
     description: '가족들과 일상 대화하기',
     icon: '👨‍👩‍👧‍👦',
     color: 'bg-pink-100 text-pink-800'
+  },
+  {
+    id: 'WEATHER',
+    name: '날씨 이야기',
+    description: '날씨에 대해 대화하기',
+    icon: '☀️',
+    color: 'bg-yellow-100 text-yellow-800'
   }
 ];
 
 // 기존 로컬 봇 응답 (API 실패 시 fallback으로 사용)
 const botResponses = {
-  greeting: {
+  INTRODUCTION: {
     initial: "안녕하세요! 저는 AI 한국어 선생님이에요. 처음 만나서 반가워요! 자기소개를 해주세요.",
     responses: {
       "안녕": "안녕하세요! 정말 반가워요. 이름이 뭐예요?",
@@ -70,18 +70,7 @@ const botResponses = {
       default: "좋아요! 그런데 조금 더 자세히 말해주실 수 있나요? 예를 들어 '안녕하세요, 저는 ○○입니다'라고 말해보세요."
     }
   },
-  shopping: {
-    initial: "안녕하세요! 편의점에 오신 것을 환영합니다. 무엇을 찾고 계세요?",
-    responses: {
-      "물": "물이 필요하시군요! 냉장고에 있어요. 어떤 물을 원하세요?",
-      "우유": "우유는 냉장고 안쪽에 있어요. 얼마나 필요하세요?",
-      "과자": "과자는 3번 선반에 있어요. 어떤 과자를 좋아하세요?",
-      "얼마": "이거는 1,500원이에요. 계산해드릴까요?",
-      "계산": "네, 계산해드릴게요. 현금으로 내시나요, 카드로 내시나요?",
-      default: "죄송해요, 잘 못 들었어요. 다시 말씀해주세요. '○○이 어디 있어요?' 이렇게 물어보세요."
-    }
-  },
-  restaurant: {
+  FOOD: {
     initial: "어서오세요! 한식당에 오신 것을 환영합니다. 몇 분이세요?",
     responses: {
       "한명": "한 분이시군요! 이쪽 자리로 안내해드릴게요. 메뉴 보시겠어요?",
@@ -93,7 +82,7 @@ const botResponses = {
       default: "죄송해요, 다시 한 번 말씀해주세요. '○○ 주세요' 또는 '○○ 있어요?' 이렇게 말해보세요."
     }
   },
-  school: {
+  SCHOOL: {
     initial: "안녕! 새로 온 친구구나? 나는 지수야. 너는 이름이 뭐야?",
     responses: {
       "안녕": "안녕! 반가워! 몇 학년이야?",
@@ -105,7 +94,7 @@ const botResponses = {
       default: "응? 잘 못 들었어. 다시 말해줄래? 친구들끼리는 편하게 말해도 돼!"
     }
   },
-  family: {
+  FAMILY: {
     initial: "얘야, 학교 다녀왔니? 오늘 학교에서 뭐 했어?",
     responses: {
       "네": "그래, 잘했어. 오늘 뭐 배웠는지 엄마한테 말해줄래?",
@@ -115,6 +104,18 @@ const botResponses = {
       "배고파": "배고프구나! 뭐 먹고 싶어? 엄마가 만들어줄게.",
       "피곤해": "많이 피곤하구나. 조금 쉬다가 저녁 먹자.",
       default: "응? 엄마가 잘 못 들었나? 천천히 다시 말해봐."
+    }
+  },
+  WEATHER: {
+    initial: "안녕하세요! 오늘 날씨가 정말 좋네요. 어떤 날씨를 좋아하세요?",
+    responses: {
+      "맑음": "맑은 날씨가 정말 좋죠! 산책하기 좋은 날이에요.",
+      "비": "비 오는 날도 좋아요! 집에서 책 읽기 좋죠.",
+      "눈": "눈 오는 날은 정말 아름다워요! 눈사람 만들고 싶어요.",
+      "흐림": "흐린 날도 나쁘지 않아요. 실내 활동하기 좋죠.",
+      "더워": "여름에는 정말 더워요! 시원한 곳에서 쉬어야겠어요.",
+      "추워": "겨울에는 정말 추워요! 따뜻한 옷을 입어야겠어요.",
+      default: "날씨에 대해 더 자세히 말해주세요! 어떤 계절을 좋아하시나요?"
     }
   }
 };
@@ -136,7 +137,8 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
 
   // API 헤더 설정
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('jwtToken') || '';
+    const token = localStorage.getItem('accessToken') || '';
+    console.log('사용할 토큰:', token ? `${token.substring(0, 20)}...` : '토큰 없음');
     return {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -146,35 +148,166 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
 
   // 대화 시작 API 호출
   const startConversation = async (subject: string) => {
-    const url = `/api/chat/start?subject=${encodeURIComponent(subject)}`;
+    const url = `http://3.36.107.16:80/api/chat/start`;
+    // 자기소개 시나리오의 경우 SELFINTRODUCTION 사용
+    const instruction = subject === 'INTRODUCTION' ? 'SELFINTRODUCTION' : subject;
+    const requestBody = { subject: instruction };
+    console.log('요청 URL:', url);
+    console.log('요청 헤더:', getAuthHeaders());
+    console.log('요청 바디:', requestBody);
+    
     const response = await fetch(url, {
-      method: 'GET',
+      method: 'POST',
       headers: getAuthHeaders(),
+      body: JSON.stringify(requestBody),
     });
-    const data = await response.json();
+
+    // 응답 상태 확인
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API 오류 응답:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.message) {
+          errorMessage += ` - ${errorData.message}`;
+        }
+      } catch (e) {
+        errorMessage += ` - ${errorText}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    // 응답 본문이 있는지 확인
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      throw new Error('서버에서 빈 응답을 받았습니다.');
+    }
+
+    // HTML 응답인지 확인
+    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+      console.error('서버가 HTML 응답을 반환했습니다:', responseText.substring(0, 200));
+      throw new Error('서버가 HTML 응답을 반환했습니다. API 엔드포인트를 확인해주세요.');
+    }
+
+    // JSON 파싱 시도
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('JSON 파싱 오류:', parseError);
+      console.error('응답 텍스트:', responseText.substring(0, 500));
+      throw new Error('서버 응답이 올바른 JSON 형식이 아닙니다.');
+    }
+
     if (data.code !== 200) throw new Error('대화 시작 실패');
     return data.data.conversationId;
   };
 
   // 대화 이어가기 API 호출
   const continueConversation = async (talkId: string, userInput: string) => {
-    const response = await fetch('/api/chat/continue', {
+    console.log('💬 대화 이어가기 시작:', { talkId, userInput });
+    const headers = getAuthHeaders();
+    console.log('💬 대화 이어가기 헤더:', headers);
+    
+    const response = await fetch('http://3.36.107.16:80/api/chat/continue', {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: headers,
       body: JSON.stringify({ talkId, userInput }),
     });
-    const data = await response.json();
+    
+    console.log('💬 대화 이어가기 응답 상태:', response.status, response.statusText);
+
+    // 응답 상태 확인
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    // 응답 본문이 있는지 확인
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      throw new Error('서버에서 빈 응답을 받았습니다.');
+    }
+
+    // HTML 응답인지 확인
+    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+      console.error('서버가 HTML 응답을 반환했습니다:', responseText.substring(0, 200));
+      throw new Error('서버가 HTML 응답을 반환했습니다. API 엔드포인트를 확인해주세요.');
+    }
+
+    // JSON 파싱 시도
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('JSON 파싱 오류:', parseError);
+      console.error('응답 텍스트:', responseText.substring(0, 500));
+      throw new Error('서버 응답이 올바른 JSON 형식이 아닙니다.');
+    }
+
     if (data.code !== 200) throw new Error('대화 이어가기 실패');
+    return data.data;
+  };
+
+  // 음성 대화 API 호출
+  const continueConversationWithVoice = async (conversationId: string, audioBlob: Blob) => {
+    console.log('🎤 음성 대화 시작:', { conversationId, audioSize: audioBlob.size });
+    
+    // Blob을 ArrayBuffer로 변환
+    const audioArrayBuffer = await audioBlob.arrayBuffer();
+    const audioBytes = new Uint8Array(audioArrayBuffer);
+    
+    const requestBody = {
+      conversationId: conversationId,
+      audioData: Array.from(audioBytes) // byte[]로 변환
+    };
+    
+    console.log('🎤 음성 대화 요청 바디:', { 
+      conversationId, 
+      audioDataLength: audioBytes.length 
+    });
+    
+    const response = await fetch('http://3.36.107.16:80/api/chat/continue/voice', {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    console.log('🎤 음성 대화 응답 상태:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('🎤 음성 대화 응답 데이터:', data);
+    
+    if (data.code !== 200) throw new Error('음성 대화 실패');
     return data.data;
   };
 
   // TTS API 호출
   const getSpeechFromTTS = async (text: string) => {
-    const response = await fetch('/api/tts', {
+    console.log('🔊 TTS 요청 시작:', text);
+    const headers = getAuthHeaders();
+    console.log('🔊 TTS 헤더:', headers);
+    
+    const response = await fetch('http://3.36.107.16:80/api/tts', {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: headers,
       body: JSON.stringify({ text }),
     });
+    
+    console.log('🔊 TTS 응답 상태:', response.status, response.statusText);
     if (!response.ok) throw new Error('TTS 실패');
     return await response.blob();
   };
@@ -188,7 +321,7 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
     // API를 사용하는 경우
     if (isApiEnabled) {
       try {
-        const convId = await startConversation(scenarioId.toUpperCase());
+        const convId = await startConversation(scenarioId);
         setConversationId(convId);
         
         // API에서 초기 메시지를 받지 못하는 경우 로컬 메시지 사용
@@ -313,39 +446,80 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
     return scenarioResponses.default;
   };
 
-  // 음성 인식 시작
-  const startVoiceRecognition = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert('음성 인식이 지원되지 않는 브라우저입니다.');
+  // 음성 녹음 시작
+  const startVoiceRecording = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('음성 녹음이 지원되지 않는 브라우저입니다.');
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    
-    recognition.lang = 'ko-KR';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const audioChunks: Blob[] = [];
 
-    recognition.onstart = () => {
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        console.log('🎤 녹음 완료:', { size: audioBlob.size, type: audioBlob.type });
+        
+        // 스트림 정리
+        stream.getTracks().forEach(track => track.stop());
+        
+        // 서버로 음성 데이터 전송
+        if (conversationId) {
+          try {
+            const aiResponse = await continueConversationWithVoice(conversationId, audioBlob);
+            
+            const botMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              content: aiResponse,
+              isBot: true,
+              timestamp: new Date()
+            };
+            
+            setMessages(prev => [...prev, botMessage]);
+            
+            // TTS 시도
+            try {
+              const speechBlob = await getSpeechFromTTS(aiResponse);
+              const audioUrl = URL.createObjectURL(speechBlob);
+              const audio = new Audio(audioUrl);
+              audio.play();
+            } catch (ttsError) {
+              console.warn('TTS 실패:', ttsError);
+            }
+            
+          } catch (error) {
+            console.error('음성 대화 실패:', error);
+            alert('음성 대화에 실패했습니다.');
+          }
+        } else {
+          alert('대화가 시작되지 않았습니다.');
+        }
+      };
+
+      mediaRecorder.start();
       setIsListening(true);
-    };
-
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setInputMessage(transcript);
-    };
-
-    recognition.onerror = () => {
+      
+      // 5초 후 자동으로 녹음 중지
+      setTimeout(() => {
+        if (mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+          setIsListening(false);
+        }
+      }, 5000);
+      
+    } catch (error) {
+      console.error('음성 녹음 실패:', error);
+      alert('음성 녹음에 실패했습니다.');
       setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
+    }
   };
+
 
   // 시나리오 선택 화면
   if (!selectedScenario) {
@@ -494,9 +668,10 @@ export function ChatbotPractice({ onBack, onPointsEarned }: ChatbotPracticeProps
               <Button
                 variant="outline"
                 size="icon"
-                onClick={startVoiceRecognition}
+                onClick={startVoiceRecording}
                 disabled={isListening}
-                className={isListening ? 'bg-red-100' : ''}
+                className={isListening ? 'bg-blue-100' : ''}
+                title="음성 녹음 (서버 전송)"
               >
                 {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </Button>

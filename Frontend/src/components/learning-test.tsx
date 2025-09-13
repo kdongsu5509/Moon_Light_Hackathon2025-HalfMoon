@@ -138,7 +138,7 @@ image: '🍲'
 
 ];
 
-export function LearningTest({ onBack, onPointsEarned, subject = 'SELF_INTRODUCTION', studyLevel = 'BEGINNER', questionCount = 5 }: LearningTestProps) {
+export function LearningTest({ onBack, onPointsEarned, subject = 'SELFINTRODUCTION', studyLevel = 'BEGINNER', questionCount = 5 }: LearningTestProps) {
 
 const [questions, setQuestions] = useState<ReviewTestQuestion[]>([]);
 

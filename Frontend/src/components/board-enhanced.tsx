@@ -36,82 +36,9 @@ interface Comment {
 export function BoardEnhanced() {
   const { t, currentLanguage } = useLanguage();
   
-  // 기존 더미 데이터로 초기화 (API 실패 시 fallback)
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: '1',
-      title: '안녕하세요! 처음 가입했어요',
-      content: '한국어 공부를 시작한 지 한 달 됐어요. 모두 반가워요! 어려운 발음이 많지만 열심히 연습하고 있어요.',
-      author: '민수',
-      language: 'ko',
-      timestamp: new Date(2024, 11, 15),
-      likes: 23,
-      replies: [
-        { id: '1-1', content: '환영해요! 저도 처음에 발음이 어려웠는데 계속 연습하면 늘어요!', author: '지영', timestamp: new Date(2024, 11, 15), likes: 5, isLiked: false },
-        { id: '1-2', content: '함께 열심히 해요~ 화이팅!', author: '준호', timestamp: new Date(2024, 11, 15), likes: 3, isLiked: false }
-      ],
-      views: 156,
-      isPopular: true,
-      isLiked: false
-    },
-    {
-      id: '2',
-      title: 'Chào mọi người!',
-      content: 'Mình là người Việt Nam và đang học tiếng Hàn. Rất vui được gặp mọi người! Có ai có thể chia sẻ kinh nghiệm học không?',
-      author: 'Linh',
-      language: 'vi',
-      timestamp: new Date(2024, 11, 14),
-      likes: 18,
-      replies: [
-        { id: '2-1', content: '안녕하세요! 저도 베트남어 조금 배워요. 서로 도와요!', author: '수진', timestamp: new Date(2024, 11, 14), likes: 7, isLiked: false }
-      ],
-      views: 89,
-      isPopular: true,
-      isLiked: false
-    },
-    {
-      id: '3',
-      title: '大家好！',
-      content: '我来自中国，正在学习韩语。希望能和大家一起进步！最近在练习韩语发音，有什么好的方法吗？',
-      author: '小明',
-      language: 'zh',
-      timestamp: new Date(2024, 11, 13),
-      likes: 31,
-      replies: [
-        { id: '3-1', content: '발음 앱을 사용해보세요! 정말 도움이 돼요.', author: '현우', timestamp: new Date(2024, 11, 13), likes: 8, isLiked: false },
-        { id: '3-2', content: '저도 중국어 배우고 있어요. 언어교환 어때요?', author: '미영', timestamp: new Date(2024, 11, 13), likes: 6, isLiked: false }
-      ],
-      views: 203,
-      isPopular: true,
-      isLiked: false
-    },
-    {
-      id: '4',
-      title: '한국 음식 처음 만들어봤어요!',
-      content: '김치찌개를 처음 만들어봤는데 생각보다 맛있게 나왔어요! 다음엔 불고기에 도전해볼 예정이에요.',
-      author: '마리아',
-      language: 'ko',
-      timestamp: new Date(2024, 11, 12),
-      likes: 15,
-      replies: [],
-      views: 67,
-      isLiked: false
-    },
-    {
-      id: '5',
-      title: 'Korean drama recommendations?',
-      content: 'I want to improve my Korean by watching dramas. Any good recommendations for beginners?',
-      author: 'Emma',
-      language: 'en',
-      timestamp: new Date(2024, 11, 11),
-      likes: 12,
-      replies: [
-        { id: '5-1', content: '"사랑의 불시착" 추천해요! 재미있고 한국어 공부에도 좋아요.', author: '태영', timestamp: new Date(2024, 11, 11), likes: 4, isLiked: false }
-      ],
-      views: 94,
-      isLiked: false
-    }
-  ]);
+  // 빈 배열로 초기화 (API에서 데이터를 가져옴)
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isNewPostDialogOpen, setIsNewPostDialogOpen] = useState(false);
@@ -122,11 +49,14 @@ export function BoardEnhanced() {
   const [activeTab, setActiveTab] = useState('all');
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
-  const [useApi, setUseApi] = useState(false); // API 사용 여부 토글
 
   // 공통 헤더 생성 함수
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('jwtToken') || '';
+    const token = localStorage.getItem('accessToken') || '';
+    console.log('🔑 게시판 토큰 확인:', { 
+      token: token ? `${token.substring(0, 20)}...` : '토큰 없음',
+      hasToken: !!token 
+    });
     return {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -137,7 +67,7 @@ export function BoardEnhanced() {
   // API 함수들
   const createPost = async (title: string, content: string) => {
     try {
-      const response = await fetch('/api/post', {
+      const response = await fetch('http://3.36.107.16:80/api/post', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ title, content }),
@@ -153,9 +83,12 @@ export function BoardEnhanced() {
 
   const fetchAllPosts = async () => {
     try {
-      const response = await fetch('/api/post/all', {
+      setLoading(true);
+      const headers = getAuthHeaders();
+      console.log('📋 게시글 목록 조회 헤더:', headers);
+      const response = await fetch('http://3.36.107.16:80/api/post/all', {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: headers,
       });
       const data = await response.json();
       if (data.code !== 200) throw new Error('게시글 조회 실패');
@@ -176,12 +109,47 @@ export function BoardEnhanced() {
       setPosts(postsData);
     } catch (error) {
       console.error('API Error:', error);
-      // API 실패 시 더미 데이터 유지
+      setPosts([]); // API 실패 시 빈 배열
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 댓글 조회 함수 추가
+  const fetchComments = async (postId: string): Promise<Comment[]> => {
+    try {
+      console.log('💬 댓글 조회 시작:', postId);
+      const headers = getAuthHeaders();
+      console.log('💬 댓글 조회 헤더:', headers);
+      const response = await fetch(`http://3.36.107.16:80/api/comments/${postId}`, {
+        method: 'GET',
+        headers: headers,
+      });
+      const data = await response.json();
+      console.log('💬 댓글 조회 응답:', data);
+      
+      if (data.code !== 200) throw new Error('댓글 조회 실패');
+      
+      const comments: Comment[] = data.data.map((c: any) => ({
+        id: c.id,
+        content: c.content,
+        author: c.creatorNickname,
+        timestamp: new Date(c.createdAt),
+        likes: c.likeCount || 0,
+        isLiked: c.isLiked || false,
+      }));
+      
+      console.log('💬 변환된 댓글:', comments);
+      return comments;
+    } catch (error) {
+      console.error('💬 댓글 조회 실패:', error);
+      return [];
     }
   };
 
   const togglePostLike = async (postId: string) => {
-    if (!useApi) {
+    // 로컬 처리 제거됨 - API만 사용
+    if (false) {
       // 기존 로컬 처리
       const isLiked = likedPosts.has(postId);
       
@@ -214,7 +182,7 @@ export function BoardEnhanced() {
     }
 
     try {
-      await fetch(`/api/post/like/${postId}`, {
+      await fetch(`http://3.36.107.16:80/api/post/like/${postId}`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: '',
@@ -271,7 +239,8 @@ export function BoardEnhanced() {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    if (!useApi) {
+    // 로컬 처리 제거됨 - API만 사용
+    if (false) {
       // 기존 로컬 처리
       setSelectedPost({
         ...post,
@@ -284,22 +253,20 @@ export function BoardEnhanced() {
     }
 
     try {
-      const response = await fetch(`/api/post/${postId}`, {
+      console.log('📄 게시글 상세 조회 시작:', postId);
+      const response = await fetch(`http://3.36.107.16:80/api/post/${postId}`, {
         method: 'GET',
         headers: getAuthHeaders(),
       });
       const data = await response.json();
+      console.log('📄 게시글 상세 조회 응답:', data);
       if (data.code !== 200) throw new Error('상세 조회 실패');
 
       const postData = data.data;
-      const comments: Comment[] = postData.comments.map((c: any) => ({
-        id: c.id,
-        content: c.content,
-        author: c.creatorNickname,
-        timestamp: new Date(c.createdAt),
-        likes: c.likeCount,
-        isLiked: c.isLiked,
-      }));
+      console.log('📄 게시글 데이터:', postData);
+      
+      // 별도의 댓글 API로 댓글 조회
+      const comments = await fetchComments(postId);
 
       setSelectedPost({
         id: postData.postId,
@@ -328,7 +295,8 @@ export function BoardEnhanced() {
   };
 
   const addComment = async (postId: string, content: string) => {
-    if (!useApi) {
+    // 로컬 처리 제거됨 - API만 사용
+    if (false) {
       // 기존 로컬 처리
       const comment: Comment = {
         id: Date.now().toString(),
@@ -354,47 +322,53 @@ export function BoardEnhanced() {
     }
 
     try {
-      const response = await fetch(`/api/comments/add/${postId}?req=${encodeURIComponent(JSON.stringify({ content }))}`, {
+      console.log('💬 댓글 추가 시작:', { postId, content });
+      const headers = {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      };
+      console.log('💬 댓글 추가 헤더:', headers);
+      const response = await fetch(`http://3.36.107.16:80/api/comments/add/${postId}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
-        body: '',
+        headers: headers,
+        body: JSON.stringify({ content }),
       });
       const data = await response.json();
+      console.log('💬 댓글 추가 응답:', data);
       if (data.code !== 200) throw new Error('댓글 추가 실패');
 
-      // 상세글 다시 불러와 댓글 갱신
-      await fetchPostDetail(postId);
-      setNewComment('');
-    } catch (error) {
-      console.error('API Error:', error);
-      // API 실패 시 로컬 처리로 fallback
-      const comment: Comment = {
-        id: Date.now().toString(),
-        content: content,
-        author: '나',
-        timestamp: new Date(),
-        likes: 0,
-        isLiked: false
-      };
+      // 댓글만 다시 조회하여 갱신
+      console.log('💬 댓글 다시 조회 시작');
+      const updatedComments = await fetchComments(postId);
       
-      const updatedPosts = posts.map(post => 
-        post.id === postId 
-          ? { ...post, replies: [...post.replies, comment] }
-          : post
-      );
-      setPosts(updatedPosts);
-      
-      if (selectedPost) {
-        setSelectedPost({...selectedPost, replies: [...selectedPost.replies, comment]});
+      // selectedPost의 댓글만 업데이트
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost({
+          ...selectedPost,
+          replies: updatedComments
+        });
       }
+      
+      // 전체 게시글 목록도 새로고침하여 댓글 수 반영
+      console.log('💬 전체 게시글 목록 새로고침 시작');
+      await fetchAllPosts();
       setNewComment('');
+      console.log('💬 댓글 추가 완료');
+      
+      // 성공 메시지 표시 (선택사항)
+      alert('댓글이 성공적으로 추가되었습니다!');
+    } catch (error) {
+      console.error('💬 댓글 추가 실패:', error);
+      alert('댓글 추가에 실패했습니다. 다시 시도해주세요.');
+      setNewComment(''); // 입력 필드 초기화
     }
   };
 
   const toggleCommentLike = async (commentId: string) => {
     if (!selectedPost) return;
 
-    if (!useApi) {
+    // 로컬 처리 제거됨 - API만 사용
+    if (false) {
       // 기존 로컬 처리
       const isLiked = likedComments.has(commentId);
       
@@ -419,7 +393,7 @@ export function BoardEnhanced() {
     }
 
     try {
-      await fetch(`/api/comments/like/${commentId}`, {
+      await fetch(`http://3.36.107.16:80/api/comments/like/${commentId}`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: '',
@@ -466,7 +440,8 @@ export function BoardEnhanced() {
   // 이벤트 핸들러들
   const handleSubmitPost = async () => {
     if (newPost.title && newPost.content && newPost.author) {
-      if (!useApi) {
+      // 로컬 처리 제거됨 - API만 사용
+    if (false) {
         // 기존 로컬 처리
         const post: Post = {
           id: Date.now().toString(),
@@ -573,12 +548,10 @@ export function BoardEnhanced() {
     }
   };
 
-  // 컴포넌트 마운트 시 API 데이터 로드 시도
+  // 컴포넌트 마운트 시 API 데이터 로드
   useEffect(() => {
-    if (useApi) {
-      fetchAllPosts();
-    }
-  }, [useApi]);
+    fetchAllPosts();
+  }, []);
 
   return (
     <div className="web-container mx-auto p-6 space-y-6">
@@ -589,15 +562,6 @@ export function BoardEnhanced() {
           <p className="text-gray-600">친구들과 소통하고 경험을 나누어요!</p>
         </div>
         <div className="flex items-center space-x-3">
-          {/* API 토글 버튼 */}
-          <Button
-            variant={useApi ? "default" : "outline"}
-            size="sm"
-            onClick={() => setUseApi(!useApi)}
-            className="text-xs"
-          >
-            {useApi ? "API 모드" : "로컬 모드"}
-          </Button>
           <Dialog open={isNewPostDialogOpen} onOpenChange={setIsNewPostDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
@@ -658,7 +622,19 @@ export function BoardEnhanced() {
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4 mt-6">
-          {getFilteredPosts().map((post, index) => (
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-500">게시글을 불러오는 중...</p>
+            </div>
+          ) : getFilteredPosts().length === 0 ? (
+            <div className="text-center py-8">
+              <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">아직 게시글이 없습니다.</p>
+              <p className="text-sm text-gray-400 mt-2">첫 번째 게시글을 작성해보세요!</p>
+            </div>
+          ) : (
+            getFilteredPosts().map((post, index) => (
             <motion.div
               key={post.id}
               initial={{ opacity: 0, y: 20 }}
@@ -743,7 +719,8 @@ export function BoardEnhanced() {
                 </CardContent>
               </Card>
             </motion.div>
-          ))}
+            ))
+          )}
         </TabsContent>
       </Tabs>
 

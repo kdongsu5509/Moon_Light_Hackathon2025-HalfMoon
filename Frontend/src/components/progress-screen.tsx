@@ -2,64 +2,107 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion"; 
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Calendar, Book, MessageCircle, Trophy, Flame } from "lucide-react";
+import { Button } from "./ui/button";
+import { Calendar, Book, MessageCircle, Trophy, Flame, Target, Settings } from "lucide-react";
+import { Progress } from "./ui/progress";
 import { getMyRecord, MyRecordResponse } from "../api/record"; 
-import { getMonthlyGoal, deleteMonthlyGoal, setMonthlyGoal, GoalResponse } from "../api/goal";
+import { getMonthlyGoal, GoalResponse } from "../api/goal";
 import { getCompletionRate, CompletionRateResponse } from "../api/subject";
+import { GoalSetting } from "./goal-setting";
 
 
-export function ProgressScreen() {
+interface ProgressScreenProps {
+  points?: number;
+  userProfile?: any;
+}
+
+export function ProgressScreen({ points: propPoints, userProfile }: ProgressScreenProps = {}) {
   const [record, setRecord] = useState<MyRecordResponse | null>(null);
   const [goal, setGoal] = useState<GoalResponse | null>(null);
-  const [newGoal, setNewGoal] = useState<number>(0);
-  const [message, setMessage] = useState(""); 
   const [loading, setLoading] = useState(true);
   const [completionRate, setCompletionRate] = useState<CompletionRateResponse | null>(null);
+  const [showGoalSetting, setShowGoalSetting] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<string>('BEGINNER');
+
+  // 주제명을 한국어로 변환하는 함수
+  const getSubjectKoreanName = (subject: string) => {
+    const subjectMap: { [key: string]: string } = {
+      'SELFINTRODUCTION': '자기소개',
+      'FAMILY': '가족',
+      'SCHOOL': '학교',
+      'FOOD': '음식',
+      'WEATHER': '날씨'
+    };
+    return subjectMap[subject] || subject;
+  };
 
   useEffect(() => {
-  Promise.all([
-    getMyRecord(),
-    getMonthlyGoal(),
-    getCompletionRate("BEGINNER")   // ✅ 새로 추가
-  ])
-    .then(([recordData, goalData, completionData]) => {
-      setRecord(recordData);
-      setGoal(goalData);
-      setCompletionRate(completionData);   // ✅ 새로 추가
-      setLoading(false);
-    })
-    .catch((err) => {
-      console.error("데이터 불러오기 실패:", err);
-      setLoading(false);
+    console.log("🚀 ProgressScreen 컴포넌트 마운트됨");
+    console.log("📋 전달받은 props:", { propPoints, userProfile });
+    
+    // 토큰 확인
+    const accessToken = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken');
+    console.log("🔑 저장된 토큰들:", { 
+      accessToken: accessToken ? `${accessToken.substring(0, 20)}...` : '없음',
+      refreshToken: refreshToken ? `${refreshToken.substring(0, 20)}...` : '없음'
     });
-}, []);
+    
+    const loadData = async () => {
+      try {
+        console.log("🔄 데이터 로딩 시작...");
+        setLoading(true);
+        
+        // 학습 기록 조회
+        console.log("🔍 학습 기록 API 호출 시작...");
+        const recordData = await getMyRecord();
+        console.log("📊 받은 학습 기록 데이터:", recordData);
+        setRecord(recordData);
+        
+        // 완료율 조회 (선택된 난이도에 따라)
+        const completionData = await getCompletionRate(selectedLevel as "BEGINNER" | "INTERMEDIATE" | "ADVANCED");
+        setCompletionRate(completionData);
+        
+        // 월별 목표 조회 (실패해도 계속 진행)
+        try {
+          const goalData = await getMonthlyGoal();
+          setGoal(goalData);
+        } catch (goalError) {
+          console.warn("월별 목표 조회 실패 (목표가 설정되지 않음):", goalError);
+          setGoal(null); // 목표가 없음을 명시적으로 설정
+        }
+        
+      } catch (err) {
+        console.error("데이터 불러오기 실패:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [selectedLevel]);
 
-const handleDeleteGoal = async () => {
+// 목표 설정 페이지에서 목표가 변경되면 다시 로드
+const refreshGoal = async () => {
   try {
-    await deleteMonthlyGoal();
-    setGoal(null);  // ⬅️ 삭제된 상태 반영
-    setMessage("이번 달 목표가 삭제되었습니다 ✅");
-  } catch (err) {
-    console.error(err);
-    setMessage("목표 삭제에 실패했습니다 ❌");
+    const goalData = await getMonthlyGoal();
+    setGoal(goalData);
+  } catch (error) {
+    console.warn("목표 재조회 실패:", error);
+    setGoal(null);
   }
 };
 
-const handleSetGoal = async () => {
-  if (!newGoal || newGoal <= 0) {
-    setMessage("목표 포인트는 1 이상이어야 합니다 ❌");
-    return;
+  if (showGoalSetting) {
+    return (
+      <GoalSetting 
+        onBack={() => {
+          setShowGoalSetting(false);
+          refreshGoal(); // 목표 설정 페이지에서 돌아올 때 목표 새로고침
+        }} 
+      />
+    );
   }
-  try {
-    const month = new Date().toISOString().slice(0, 7); // YYYY-MM 형식
-    await setMonthlyGoal({ month, goal: newGoal });
-    setGoal({ month, goalPoints: newGoal, currentPoints: currentPoints });
-    setMessage("이번 달 목표가 설정되었습니다 ✅");
-  } catch (err) {
-    console.error(err);
-    setMessage("목표 설정에 실패했습니다 ❌");
-  }
-};
 
   if (loading) {
     return <p className="text-center text-gray-500">불러오는 중...</p>;
@@ -72,7 +115,6 @@ const handleSetGoal = async () => {
   const currentPoints = goal?.currentPoints ?? 0;   // ⬅️ goal API 값 사용
 const goalPoints = goal?.goalPoints ?? 1000;      // ⬅️ 미설정 시 기본값
 const progressPercentage = Math.min((currentPoints / goalPoints) * 100, 100);
-
 
   // ✅ API 데이터 기반 stats
   const stats = [
@@ -172,32 +214,15 @@ const progressPercentage = Math.min((currentPoints / goalPoints) * 100, 100);
         <p className="text-gray-600 text-lg">멋진 성과를 확인해보세요! 🎉</p>
       </motion.div>
 
-{/* ✅ 월 목표 설정 & 삭제 */}
-<div className="text-right mb-4 space-y-2">
-  <div className="flex justify-end space-x-2">
-    <input
-      type="number"
-      placeholder="목표 포인트 입력"
-      className="px-3 py-2 border rounded-lg text-sm"
-      value={newGoal}
-      onChange={(e) => setNewGoal(Number(e.target.value))}
-    />
-    <button
-      onClick={handleSetGoal}
-      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-    >
-      월 목표 설정
-    </button>
-  </div>
-  <button
-    onClick={handleDeleteGoal}
-    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+{/* 목표 관리 버튼 */}
+<div className="flex justify-end mb-4">
+  <Button
+    onClick={() => setShowGoalSetting(true)}
+    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
   >
-    월 목표 삭제
-  </button>
-  {message && (
-    <p className="text-sm text-gray-600 mt-2 text-center">{message}</p>
-  )}
+    <Target className="w-4 h-4 mr-2" />
+    목표 설정
+  </Button>
 </div>
 
 
@@ -314,17 +339,47 @@ const progressPercentage = Math.min((currentPoints / goalPoints) * 100, 100);
   >
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">📊 난이도별 이수율 (BEGINNER)</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl">📊 주제별 학습 진도</CardTitle>
+          <div className="flex space-x-2">
+            {['BEGINNER', 'INTERMEDIATE', 'ADVANCED'].map((level) => (
+              <Button
+                key={level}
+                variant={selectedLevel === level ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedLevel(level)}
+                className={`text-xs ${
+                  selectedLevel === level 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600' 
+                    : ''
+                }`}
+              >
+                {level === 'BEGINNER' ? '초급' : 
+                 level === 'INTERMEDIATE' ? '중급' : '고급'}
+              </Button>
+            ))}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
-          {completionRate.subjectCompletionRates.map((item) => (
-            <li key={item.subject} className="flex justify-between">
-              <span className="font-medium">{item.subject}</span>
-              <span className="text-gray-600">{item.completionRate.toFixed(1)}%</span>
-            </li>
+        <div className="space-y-4">
+          {completionRate.subjectCompletionRates.map((item, index) => (
+            <div key={item.subject} className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-800">
+                  {getSubjectKoreanName(item.subject)}
+                </span>
+                <span className="text-sm text-gray-600 font-semibold">
+                  {item.completionRate.toFixed(1)}%
+                </span>
+              </div>
+              <Progress 
+                value={item.completionRate} 
+                className="h-3"
+              />
+            </div>
           ))}
-        </ul>
+        </div>
       </CardContent>
     </Card>
   </motion.div>
