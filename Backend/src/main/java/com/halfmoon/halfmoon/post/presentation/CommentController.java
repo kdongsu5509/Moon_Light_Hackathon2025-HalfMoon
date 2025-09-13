@@ -17,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -47,11 +48,8 @@ public class CommentController {
             })
     @PostMapping("/add/{postId}")
     public APIResponse<UUID> addComment(
-            @Parameter(description = "사용자 정보 (인증 객체)", hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Parameter(description = "댓글 내용 및 관련 정보")
-            @Validated CommentRequestDto req,
-            @Parameter(description = "게시글 ID (UUID)")
+            @Validated @RequestBody CommentRequestDto req,
             @PathVariable UUID postId) {
         UUID comment = service.createComment(userDetails.getUsername(), postId, req);
         return APIResponse.success(comment);
