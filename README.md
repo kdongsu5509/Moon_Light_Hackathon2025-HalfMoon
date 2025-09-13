@@ -32,38 +32,49 @@ AI를 활용한 발음 교정, 대화 연습, 맞춤형 학습 자료 제공을 
 
 <br>
 
+---
+
 ## 🛠 4. 기술 스택 및 개발 환경
 
- 상세 내용은 [백엔드 상세 리드미 바로가기](./Backend/README.md) 와 [프론트엔드 상세 리드미 바로가기](./Frontend/README.md) 의 내용을 참고해주세요.
+- 기술 스택을 포함한 상세 내용은 [백엔드 상세 리드미 바로가기](./Backend/README.md) 와 [프론트엔드 상세 리드미 바로가기](./Frontend/README.md) 의 내용을 참고해주세요.
 
-### ⚙️ 백엔드
+### 백엔드 개발 환경
 
-- **개발 언어**: Java 21
-- **IDE**: IntelliJ IDEA, Cursor
-- **빌드 도구**: Gradle 8.5
-- **프레임워크**: Spring Boot 3.5.5
-- **데이터베이스**: H2 Database (개발용 인메모리)
+<img src = "https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white">
+<Br>
+<img src="https://img.shields.io/badge/IntelliJIDEA-000000.svg?style=for-the-badge&logo=intellij-idea&logoColor=white">
+<img src="https://img.shields.io/badge/Visual%20Studio%20Code-0078d7.svg?style=for-the-badge&logo=visual-studio-code&logoColor=white">
+<Br>
+<img src="https://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">
+<img src="https://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
+<br>
+<img src="https://img.shields.io/badge/H2%20Database-09476B?style=for-the-badge&logo=h2&logoColor=white">
 
-### 🎨 프론트엔드
+### 프론트엔드 개발 환경
 
-- **개발 도구**: Visual Studio Code
-- **UI 디자인**: Figma
-- **프로토타이핑**: Figma 활용한 화면 설계
+![Visual Studio Code](https://img.shields.io/badge/Visual%20Studio%20Code-0078d7.svg?style=for-the-badge&logo=visual-studio-code&logoColor=white)
 
-### 📚 공통
+### 디자인
 
-- Git & GitHub  
-- Notion (프로젝트 관리)  
-- Swagger & Notion (API 문서화)  
+<img src="https://img.shields.io/badge/figma-%23F24E1E.svg?style=for-the-badge&logo=figma&logoColor=white">
 
-### 🚀 배포 및 운영 환경
+### 공통
+
+<img src="https://img.shields.io/badge/Git-F05032.svg?&style=for-the-badge&logo=Git&logoColor=white">
+<img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white">
+<br>
+<img src="https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white">
+<br>
+<img src="https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white">
+
+### 배포 및 운영 환경
 
 - **AI 통합**: Spring AI Framework, Chat Memory, Structured Output  
 - **보안/인증**: Spring Security, JWT 기반 인증  
-- **DB**: H2 DB, Spring Data JPA, QueryDSL  
+- **DB 설계**: H2 DB, Spring Data JPA, QueryDSL  
 - **배포 환경**: AWS EC2 · Docker · GitHub Actions · Amazon ECR
 
-### 🤝 협업 방식
+### 협업 방식
 
 - 기능별 분업 (프론트/백)  
 - 페어 프로그래밍 (AI 통합)  
@@ -83,9 +94,11 @@ Moon_Light_Hackathon2025-HalfMoon/
 
 <br>
 
-## 🚀 5. 기능 명세서
+---
 
-### 🌱 (1) 한국어 학습 자료 생성
+## 5. 기능 명세서
+
+### (1) 한국어 학습 자료 생성
 
 AI가 학습자의 수준과 주제에 맞춰 문장을 자동 생성합니다.  
 
@@ -98,7 +111,7 @@ AI가 학습자의 수준과 주제에 맞춰 문장을 자동 생성합니다.
 
 ---
 
-### 💬 (2) 주제별 AI 대화 연습
+### (2) 주제별 AI 대화 연습
 
 선택한 주제로 AI와 실시간 대화를 나눌 수 있습니다.  
 
@@ -109,9 +122,7 @@ AI가 학습자의 수준과 주제에 맞춰 문장을 자동 생성합니다.
 
 > 🧠 사용 AI: **GPT-4o-mini (대화)** · **Whisper-1 (STT)** · **Spring AI Chat Memory**
 
----
-
-### 🔊 (3) 한국어 발음 학습
+### (3) 한국어 발음 학습
 
 AI가 발음을 듣고 평가해줍니다.  
 
@@ -121,9 +132,7 @@ AI가 발음을 듣고 평가해줍니다.
 
 > 🧠 사용 AI: **OpenAI TTS-1** · **Google Gemini-2.5-Flash**
 
----
-
-### 📊 (4) 학습 진도 관리
+### (4) 학습 진도 관리
 
 학습자가 얼마나 공부했는지 추적합니다.  
 
@@ -132,9 +141,7 @@ AI가 발음을 듣고 평가해줍니다.
 - 학습 포인트 시스템  
 - 개인 통계 확인 가능  
 
----
-
-### 🔐 (5) 사용자 인증 및 관리
+### (5) 사용자 인증 및 관리
 
 안전한 학습 환경을 위한 회원 시스템을 제공합니다.
 
@@ -142,20 +149,18 @@ AI가 발음을 듣고 평가해줍니다.
 - 개인 학습 데이터 보안  
 - 사용자별 학습 이력 저장  
 
----
-
-### 📝 (6) API
+### (6) API
 >
 > 전체 API 명세는 [반월 서버 API 문서](http://3.36.107.16/swagger-ui/index.html) 에서 확인 가능합니다.  
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 **주요 카테고리**
 
-1. 📄 게시글 관리: 학습 자료 CRUD  
-2. 💭 댓글 기능: 학습 피드백  
-3. 👤 사용자 정보: 프로필 & 인증 관리  
-4. 🈴 한국어 학습: 자료 생성 & 조회  
-5. 🎯 목표 관리: 학습 목표 설정 & 추적  
-6. 📚 학습 기록: 진도 & 성취도 관리  
+1. 게시글 관리: 학습 자료 CRUD  
+2. 댓글 기능: 학습 피드백  
+3. 사용자 정보: 프로필 & 인증 관리  
+4. 한국어 학습: 자료 생성 & 조회  
+5. 목표 관리: 학습 목표 설정 & 추적  
+6. 학습 기록: 진도 & 성취도 관리  
 
 ---
